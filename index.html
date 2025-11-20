@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AKISATOの世界</title>
+    
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- 配置 Tailwind 样式 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        anime: {
+                            pink: '#ff7eb3',
+                            blue: '#64d2ff',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- 引入 Import Map -->
+    <script type="importmap">
+    {
+        "imports": {
+            "react": "https://esm.sh/react@18.2.0",
+            "react-dom/client": "https://esm.sh/react-dom@18.2.0/client",
+            "framer-motion": "https://esm.sh/framer-motion@10.16.4?external=react,react-dom",
+            "lucide-react": "https://esm.sh/lucide-react@0.292.0?external=react,react-dom"
+        }
+    }
+    </script>
+
+    <style>
+        /* 滚动条样式 */
+        html { scroll-behavior: smooth; }
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* 防止 iOS 点击高亮 */
+        * { -webkit-tap-highlight-color: transparent; }
+
+        /* [修改] 优化阴影逻辑 */
+        /* 实心文字（黑色）使用 text-shadow */
+        .shadow-text-solid {
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        /* 渐变文字（透明背景）使用 drop-shadow，避免颜色变暗发脏 */
+        .shadow-text-gradient {
+            filter: drop-shadow(0 2px 4px rgba(96, 165, 250, 0.2)); /* 使用淡蓝色阴影代替黑色 */
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-slate-800 overflow-x-hidden selection:bg-pink-200 selection:text-pink-900">
+    <div id="root"></div>
+
+    <!-- React 应用逻辑 -->
+    <script type="module">
+        import React, { useState, useEffect } from 'react';
+        import { createRoot } from 'react-dom/client';
+        import { motion, useScroll, useTransform, useSpring, useMotionValue, AnimatePresence } from 'framer-motion';
+        // 引入所需图标
+        import { ArrowRight, ExternalLink, Mail, Github, Twitter, Tv, Disc, Star, MessageCircle, BrainCircuit, CheckCircle2, PlayCircle, History, Gamepad2, X, Music, Cloud, Bot, Terminal, BookOpen } from 'lucide-react';
+
+        // --- 配置部分 ---
+        const CONFIG = {
+            userId: '648470',
+            // [预览修改] 已替换本地路径为网络占位图，以便预览显示
+            avatar: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8HRpHjs80LFuF_yfs2Avw8wPzD918gACRjcAAtPG8VTjbO0fkjB6CDYE.png',
+            bgImage: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8HZpHjs-DKXibaPMoG3c_5dyf0rAIAACSDcAAtPG8VQtPYyl1yUINTYE.png', 
+            featured: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8HZpHjs-DKXibaPMoG3c_5dyf0rAIAACSDcAAtPG8VQtPYyl1yUINTYE.png',
+            featuredImg: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8HhpHjs_vKh-Qka-4gQybCqIhAS0ewACSjcAAtPG8VT7a-U_eQ_3IzYE.png', 
+            // 注意：这里原本是透明背景的人物立绘，暂用占位图代替
+            charaLeft: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8J9pHjxsLC4jgWe3HKIv202ir9kB8gACcTcAAtPG8VSEHH0bQJnjVzYE.png',
+            charaRight: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8PFpHj2I2D0wGFkFbiTpRK3ngC3iHQACwzcAAtPG8VSmsQKPCEU9xTYE.png',
+            spotifyUrl: 'https://open.spotify.com/embed/playlist/5XKyDV6Snj9eBXO5rcuRpo?utm_source=generator&theme=0', // Spotify Embed URL
+            spotifyProfile: 'https://open.spotify.com/user/1adxgwu2yp1uvvqh5yd60y99o', // Spotify Profile URL
+        };
+
+        // --- 组件定义 ---
+
+        // 0. Custom Icons - QQ Penguin (使用您提供的 SVG 路径)
+        const QQIcon = (props) => (
+            React.createElement("svg", {
+                ...props,
+                xmlns: "http://www.w3.org/2000/svg",
+                viewBox: "0 0 1024 1024",
+                version: "1.1",
+                fill: "currentColor" 
+            },
+                React.createElement("path", { 
+                    d: "M110.08 808.409c22.43 7.581 46.927 2.973 68.962-13.135 0.572 0.886 1.123 1.752 1.694 2.619-37.632 22.961-58.624 55.02-58.624 90.762 0 73.511 86.469 126.858 205.627 126.858 63.193 0 121.758-16.404 159.39-44.288 12.229 0.689 23.138 0.689 35.505 0.02 37.632 27.864 96.177 44.268 159.37 44.268 119.138 0 205.646-53.347 205.646-126.858 0-35.663-20.913-67.624-58.387-90.605a99.888 99.888 0 0 0 1.713-2.638c21.977 15.99 46.316 20.618 68.766 13.016 67.17-22.823 70.833-140.012 40.192-238.69-16.266-52.342-46.16-93.361-71.07-120.655 0.295-3.78 0.453-7.542 0.453-11.343 0-28.947-7.582-57.029-22.528-83.672v-0.374c0-190.327-153.265-345.187-341.642-345.187-188.396 0-341.661 154.86-341.661 345.187v1.22c-14.632 26.388-22.056 54.213-22.056 82.807 0 3.446 0.118 6.931 0.394 10.476-25.226 27.451-55.473 68.785-71.857 121.54-30.661 98.718-26.998 215.868 40.113 238.672z m7.956-223.725c15.242-49.132 45.45-86.96 68.096-110.02a25.196 25.196 0 0 0 6.892-21.564c-0.827-5.317-1.26-10.397-1.26-15.34 0-21.681 6.301-43.047 18.688-63.429a25.488 25.488 0 0 0 3.623-14.828 79.882 79.882 0 0 1-0.236-5.79c0-162.56 130.678-294.813 291.288-294.813s291.289 132.253 291.289 294.813c0 1.753-0.079 3.446-0.197 5.16a25.277 25.277 0 0 0 3.683 14.828c12.642 20.559 19.042 42.102 19.042 64.04 0 5.159-0.453 10.377-1.359 15.93-1.339 7.917 1.221 15.951 6.833 21.721 22.37 22.902 52.264 60.475 67.407 109.292 26.959 86.784 17.507 167.286-8.211 176.03-13.332 4.51-29.125-9.708-38.952-21.445-5.336-6.42-13.41-9.807-21.937-8.881a25.137 25.137 0 0 0-19.594 13.233 324.714 324.714 0 0 1-31.252 47.97 25.242 25.242 0 0 0-4.549 21.918 25.215 25.215 0 0 0 14.69 16.876c35.152 14.651 55.277 35.88 55.277 58.25 0 42.181-69.651 76.485-155.274 76.485-55.512 0-107.185-14.828-134.813-38.715a25.174 25.174 0 0 0-16.463-6.124c-0.61 0-1.26 0.02-1.87 0.078-17.389 1.3-30.957 1.28-47.853-0.02-6.932-0.61-13.351 1.675-18.393 6.046-27.667 23.907-79.34 38.735-134.872 38.735-85.603 0-155.254-34.304-155.254-76.485 0-22.45 20.243-43.737 55.512-58.368 7.286-3.033 12.721-9.236 14.71-16.876a25.113 25.113 0 0 0-4.51-21.918c-11.874-15.183-22.37-31.35-31.231-48.049a25.163 25.163 0 0 0-19.633-13.253c-8.468-0.886-16.581 2.462-21.957 8.881-9.886 11.835-25.522 26.349-39.11 21.622-25.776-8.704-35.19-89.186-8.25-175.99z" 
+                })
+            )
+        );
+
+        // [新增] Bangumi Icon (使用您提供的 SVG 路径)
+        const BangumiIcon = (props) => (
+            React.createElement("svg", {
+                ...props,
+                viewBox: "0 0 1024 1024",
+                version: "1.1",
+                xmlns: "http://www.w3.org/2000/svg",
+                fill: "currentColor" 
+            },
+                React.createElement("path", { d: "M228.115268 615.399298a12.300795 12.300795 0 0 0 11.35458 7.569719 12.471113 12.471113 0 0 0 4.749999-0.965139l147.609537-61.882459a12.300795 12.300795 0 0 0 0.26494-22.557765l-147.609537-66.235049a12.300795 12.300795 0 1 0-10.067727 22.444219l121.740019 54.634453-121.456155 50.906366a12.300795 12.300795 0 0 0-6.585656 16.085655zM399.020617 627.965033H239.469848a12.300795 12.300795 0 0 0 0 24.601589h159.550769a12.300795 12.300795 0 0 0 0-24.601589zM399.020617 667.460046H239.469848a12.300795 12.300795 0 0 0 0 24.601589h159.550769a12.300795 12.300795 0 0 0 0-24.601589zM872.941851 476.892349l-133.283841 58.381464a12.300795 12.300795 0 0 0-0.397411 22.349598l133.302766 64.058754a12.073703 12.073703 0 0 0 5.317729 1.23008 12.300795 12.300795 0 0 0 5.336652-23.390435l-109.15536-52.42031L882.896033 499.469038a12.300795 12.300795 0 1 0-9.954182-22.576689zM877.881094 627.965033h-148.101569a12.300795 12.300795 0 0 0 0 24.601589h148.101569a12.300795 12.300795 0 0 0 0-24.601589zM877.881094 667.460046h-148.101569a12.300795 12.300795 0 0 0 0 24.601589h148.101569a12.300795 12.300795 0 0 0 0-24.601589zM644.866193 537.128395h-162.919295a12.28187 12.28187 0 0 0-10.711153 18.318722l81.374488 145.130453a12.300795 12.300795 0 0 0 21.460155 0l81.374489-145.130453a12.300795 12.300795 0 0 0-10.730078-18.318722z m-81.374488 132.299778l-60.444213-107.698189h120.888426z" }),
+                React.createElement("path", { d: "M891.411968 334.960102H648.405037c-6.812748-15.13944-19.813742-28.386449-36.864535-38.018917L803.092262 19.283861a12.300795 12.300795 0 0 0-20.249001-13.966133L588.566402 286.873457a147.723082 147.723082 0 0 0-45.418319-7.001991 151.507942 151.507942 0 0 0-31.887445 3.368526L239.980804 4.712151A12.300795 12.300795 0 0 0 222.437978 21.87649l262.726051 269.803739c-22.14143 9.821711-39.116527 25.112546-47.310749 43.242025H132.547555A91.763929 91.763929 0 0 0 40.764702 426.705107v414.44216A91.763929 91.763929 0 0 0 132.547555 932.967969h268.024855l-19.908363 46.989036c-12.641432 29.881469 22.614538 57.094612 48.294812 37.299794L538.473781 932.967969h352.938187a91.763929 91.763929 0 0 0 91.782853-91.782853v-414.442161a91.763929 91.763929 0 0 0-91.782853-91.782853z m34.839635 463.815658a60.709153 60.709153 0 0 1-60.709153 60.709153H585.670984L487.870204 932.967969l-77.002975 57.851583 24.412346-57.851583 31.016927-73.483056H198.082405A60.728077 60.728077 0 0 1 137.27863 798.737912V440.330602a60.728077 60.728077 0 0 1 60.728077-60.728077h667.460046a60.709153 60.709153 0 0 1 60.709153 60.728077z" })
+            )
+        );
+
+        // [新增] Steam Icon (使用您提供的 SVG 路径)
+        const SteamIcon = (props) => (
+            React.createElement("svg", {
+                ...props,
+                viewBox: "0 0 1024 1024",
+                version: "1.1",
+                xmlns: "http://www.w3.org/2000/svg",
+                fill: "currentColor" 
+            },
+                React.createElement("path", { d: "M895.51 350.26a415.67 415.67 0 0 0-782.86 49l59.73 24.59c39.23-151.32 176.93-263.35 340.3-263.35 193.82 0 351.5 157.68 351.5 351.5S706.5 863.5 512.68 863.5c-119.33 0-225-59.78-288.53-151l-96.22-43.43c0.63 1.55 1.27 3.08 1.91 4.62a415.6 415.6 0 0 0 765.67-323.43z" }),
+                React.createElement("path", { d: "M627.655345 424.39011m-61.539174 14.524565a63.23 63.23 0 1 0 123.078348-29.049129 63.23 63.23 0 1 0-123.078348 29.049129Z" }),
+                React.createElement("path", { d: "M395.55 755.79a99.31 99.31 0 0 0 99.31-99.31v-1.92l120-93.8c4.24 0.39 8.53 0.6 12.87 0.6a137 137 0 1 0-137-137q0 6.17 0.55 12.18L396.87 557.2h-1.32a98.87 98.87 0 0 0-50.1 13.55L100.34 460.39a421.9 421.9 0 0 0 3.85 128.13l193.94 87.31a99.34 99.34 0 0 0 97.42 79.96zM627.67 335a89.42 89.42 0 1 1-89.41 89.41A89.41 89.41 0 0 1 627.67 335zM375.4 710.61a57.63 57.63 0 0 0 76.21-28.89 57.63 57.63 0 0 0-28.89-76.2L371 582.24a78.2 78.2 0 1 1-47.33 105.08z" })
+            )
+        );
+
+        // 1. Custom Cursor with Particles
+        const CustomCursor = ({ hidden }) => {
+            const cursorX = useMotionValue(-100);
+            const cursorY = useMotionValue(-100);
+            const springConfig = { damping: 20, stiffness: 400 }; 
+            const cursorXSpring = useSpring(cursorX, springConfig);
+            const cursorYSpring = useSpring(cursorY, springConfig);
+            const [particles, setParticles] = useState([]);
+            const [isClicking, setIsClicking] = useState(false);
+
+            useEffect(() => {
+                let idCounter = 0;
+                const moveCursor = (e) => {
+                cursorX.set(e.clientX);
+                cursorY.set(e.clientY);
+
+                // 简单的粒子生成逻辑 (节流)
+                if (Math.random() > 0.7) {
+                    const id = idCounter++;
+                    const newParticle = {
+                    id,
+                    x: e.clientX,
+                    y: e.clientY,
+                    color: Math.random() > 0.5 ? '#64d2ff' : '#ff7eb3' // 蓝色或粉色粒子
+                    };
+                    setParticles(prev => [...prev.slice(-20), newParticle]); // 限制最大粒子数
+                    
+                    // 自动清理
+                    setTimeout(() => {
+                    setParticles(prev => prev.filter(p => p.id !== id));
+                    }, 600);
+                }
+                };
+
+                const handleMouseDown = () => setIsClicking(true);
+                const handleMouseUp = () => setIsClicking(false);
+
+                window.addEventListener('mousemove', moveCursor);
+                window.addEventListener('mousedown', handleMouseDown);
+                window.addEventListener('mouseup', handleMouseUp);
+                return () => {
+                    window.removeEventListener('mousemove', moveCursor);
+                    window.removeEventListener('mousedown', handleMouseDown);
+                    window.removeEventListener('mouseup', handleMouseUp);
+                }
+            }, []);
+
+            return React.createElement(AnimatePresence, null,
+                !hidden && React.createElement(motion.div, {
+                    initial: { opacity: 0 },
+                    animate: { opacity: 1 },
+                    exit: { opacity: 0 },
+                    transition: { duration: 0.3 },
+                    className: "pointer-events-none z-[9999] fixed inset-0 overflow-hidden"
+                },
+                    // 粒子层
+                    particles.map(p => 
+                        React.createElement(motion.div, {
+                            key: p.id,
+                            initial: { opacity: 0.8, scale: 1, x: p.x, y: p.y },
+                            animate: { opacity: 0, scale: 0, x: p.x + (Math.random() - 0.5) * 20, y: p.y + (Math.random() - 0.5) * 20 },
+                            transition: { duration: 0.6 },
+                            className: "fixed w-2 h-2 rounded-full pointer-events-none",
+                            style: { backgroundColor: p.color }
+                        })
+                    ),
+                    // 原始跟随圆圈
+                    React.createElement(motion.div, {
+                        className: "fixed top-0 left-0 pointer-events-none",
+                        style: { 
+                            x: cursorXSpring, 
+                            y: cursorYSpring,
+                        }
+                    },
+                        React.createElement("div", { className: "-translate-x-1/2 -translate-y-1/2" },
+                            React.createElement(motion.div, {
+                                animate: { 
+                                    // [修改] 点击时放大 2.5 倍，背景变全透明，模糊消失，边框变淡
+                                    scale: isClicking ? 2.5 : 1, 
+                                    backgroundColor: isClicking ? "rgba(255, 255, 255, 0)" : "rgba(255, 255, 255, 0.05)",
+                                    backdropFilter: isClicking ? "blur(0px)" : "blur(4px)", 
+                                    borderColor: isClicking ? "rgba(100, 210, 255, 0.3)" : "rgba(96, 165, 250, 0.8)"
+                                },
+                                transition: { type: "spring", stiffness: 400, damping: 25 },
+                                // [修改] 去除固定的 backdrop-blur 类，改用 animate 控制
+                                className: "w-12 h-12 rounded-full border-2 shadow-[0_0_15px_rgba(100,210,255,0.5)] flex items-center justify-center overflow-hidden"
+                            },
+                                // [新增] 点击时隐藏内部装饰，保持视野纯净
+                                React.createElement(motion.div, { 
+                                    animate: { opacity: isClicking ? 0 : 1 },
+                                    className: "absolute top-1 left-2 w-4 h-2 bg-white/60 rounded-full rotate-[-45deg] blur-[1px]" 
+                                }),
+                                React.createElement(motion.div, { 
+                                    animate: { opacity: isClicking ? 0 : 1 },
+                                    className: "w-1.5 h-1.5 bg-blue-500 rounded-full shadow-[0_0_5px_#3b82f6]" 
+                                })
+                            )
+                        )
+                    )
+                )
+            );
+        };
+
+        // 2. Parallax Character
+        // [修改] 优化滚动退场效果：加快进度 (0.15)，大幅增加位移 (600px)
+        const ParallaxCharacter = ({ src, side = 'right', offset = 50 }) => {
+            const { scrollYProgress } = useScroll();
+            // y轴视差稍微保留一点
+            const y = useTransform(scrollYProgress, [0, 1], [0, -offset]);
+            
+            // [修改] 调整范围到 [0, 0.15] (约滚动过首屏时)，让角色迅速退场
+            // 透明度: 0% -> 15% 滚动时，1 -> 0
+            const opacity = useTransform(scrollYProgress, [0, 0.15], [1, 0]);
+            
+            // [修改] X轴位移: 0% -> 15% 滚动时，大幅向右移动 600px，形成明显的"滑出"感
+            // 这样当用户看到下方的"我的其他网页"时，角色已经完全滑出屏幕了
+            const x = useTransform(scrollYProgress, [0, 0.15], [0, 600]);
+            
+            return React.createElement(motion.div, {
+                style: { y, opacity, x },
+                className: `absolute bottom-0 ${side === 'right' ? '-right-10 md:right-10' : '-left-10 md:left-10'} w-64 md:w-96 z-0 pointer-events-none hidden lg:block origin-bottom-right`
+            }, 
+                React.createElement("img", { 
+                    src: src, 
+                    alt: "Anime Character", 
+                    className: "w-full h-auto drop-shadow-2xl",
+                    onError: (e) => e.target.style.display = 'none' // 如果图片加载失败则隐藏
+                })
+            );
+        };
+
+        // 3. Glass Card
+        const GlassCard = ({ children, className = "" }) => (
+            React.createElement("div", { className: `bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl rounded-3xl ${className}` }, children)
+        );
+
+        // 4. Social Link Card
+        // [修复] 将入场动画(div)与交互动画(a)分离，解决 Hover 状态被锁定的 Bug
+        const SocialCard = ({ icon: Icon, title, subtitle, color, href, className = "" }) => {
+            // 入场动画变体
+            const cardVariants = {
+                hidden: { y: 20, opacity: 0, scale: 0.9 },
+                visible: { 
+                    y: 0, 
+                    opacity: 1, 
+                    scale: 1,
+                    transition: { type: "spring", stiffness: 100 }
+                }
+            };
+
+            return React.createElement(motion.div, {
+                variants: cardVariants,
+                className: className // 外部传入的布局类名 (宽度等)
+            },
+                React.createElement(motion.a, {
+                    href: href,
+                    target: "_blank",
+                    rel: "noopener noreferrer",
+                    // 交互动画独立处理，互不干扰
+                    whileHover: { y: -8, scale: 1.02 }, 
+                    whileTap: { scale: 0.98 },
+                    transition: { type: "spring", stiffness: 400, damping: 17 },
+                    className: `h-full relative overflow-hidden group block p-6 rounded-3xl bg-white shadow-lg border border-gray-100 transition-colors duration-300`
+                }, 
+                    React.createElement("div", { className: `absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity duration-300 ${color}` }),
+                    React.createElement("div", { className: "flex items-center justify-between mb-4" },
+                        React.createElement("div", { className: `p-3 rounded-2xl ${color} bg-opacity-10` },
+                            React.createElement(Icon, { className: `w-6 h-6 ${color.replace('bg-', 'text-')}` })
+                        ),
+                        React.createElement(ExternalLink, { className: "w-4 h-4 text-gray-300 group-hover:text-gray-500" })
+                    ),
+                    React.createElement("h3", { className: "text-lg font-bold text-gray-800" }, title),
+                    React.createElement("p", { className: "text-sm text-gray-400" }, subtitle)
+                )
+            );
+        };
+
+        // 5. Anime Grid Component
+        const AnimeGrid = ({ type }) => {
+            const [animes, setAnimes] = useState([]);
+            const [loading, setLoading] = useState(true);
+            
+            const isWatching = type === 'watching';
+            const collectionType = isWatching ? 3 : 2; // 3=Watching, 2=Watched
+            const limit = 15;
+
+            useEffect(() => {
+                setLoading(true);
+                const fetchData = async () => {
+                    const mockTitle = isWatching ? "模拟在看：孤独摇滚" : "模拟看过：CLANNAD";
+                    const mockData = Array.from({ length: limit }).map((_, i) => ({
+                        id: i,
+                        name: `${mockTitle} ${i+1}`,
+                        score: isWatching ? 0 : (i % 2 === 0 ? 10 : 9), 
+                        img: i % 2 === 0 ? CONFIG.bgImage : CONFIG.featuredImg,
+                        ep: isWatching ? 5 + i : 24
+                    }));
+
+                    try {
+                        const response = await fetch(`https://api.bgm.tv/v0/users/${CONFIG.userId}/collections?subject_type=2&type=${collectionType}&limit=${limit}`);
+                        if (!response.ok) throw new Error('API Error');
+                        const data = await response.json();
+                        
+                        if (data?.data?.length > 0) {
+                            const realData = data.data.map(item => ({
+                                id: item.subject_id,
+                                name: item.subject.name_cn || item.subject.name,
+                                score: item.rate || 0,
+                                img: item.subject.images?.large || item.subject.images?.common || CONFIG.featuredImg,
+                                ep: isWatching ? item.ep_status : (item.subject.eps || '全集')
+                            }));
+                            setAnimes(realData);
+                        } else {
+                            setAnimes(mockData);
+                        }
+                    } catch (e) {
+                        setAnimes(mockData);
+                    } finally {
+                        setLoading(false);
+                    }
+                };
+                fetchData();
+            }, [collectionType, isWatching]);
+
+            // Animation Variants
+            const containerVariants = {
+                hidden: { opacity: 0 },
+                visible: {
+                    opacity: 1,
+                    transition: { staggerChildren: 0.1 }
+                }
+            };
+
+            const itemVariants = {
+                hidden: { y: 20, opacity: 0, scale: 0.9 },
+                visible: { 
+                    y: 0, 
+                    opacity: 1, 
+                    scale: 1,
+                    transition: { type: "spring", stiffness: 100 }
+                }
+            };
+
+            if (loading) {
+                return React.createElement("div", { className: "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 animate-pulse" },
+                    Array.from({ length: 16 }).map((_, i) => React.createElement("div", { key: i, className: "aspect-[2/3] w-full bg-gray-200 rounded-3xl" }))
+                );
+            }
+
+            return React.createElement(motion.div, {
+                variants: containerVariants,
+                initial: "hidden",
+                whileInView: "visible",
+                // [修改] once: false 实现反复触发，amount: 0.2 表示元素进入 20% 时触发
+                viewport: { once: false, amount: 0.2, margin: "-50px" },
+                className: "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+            },
+                // Stats Card
+                React.createElement(motion.div, { variants: itemVariants, className: "col-span-2 md:col-span-3 lg:col-span-1 h-80 lg:h-auto lg:aspect-[2/3]" },
+                    React.createElement(GlassCard, { className: "p-6 flex flex-col justify-between bg-gradient-to-br from-pink-50 to-white h-full" },
+                        React.createElement("div", null,
+                            React.createElement("div", { className: "flex items-center gap-3 mb-4" },
+                                React.createElement("img", { src: CONFIG.avatar, alt: "Avatar", className: "w-12 h-12 rounded-full border-2 border-pink-200 object-cover" }),
+                                React.createElement("div", null,
+                                    React.createElement("p", { className: "font-bold text-gray-800" }, "Bangumi"),
+                                    React.createElement("p", { className: "text-xs text-gray-500" }, isWatching ? '正在追番' : '历史记录')
+                                )
+                            ),
+                            React.createElement("p", { className: "text-sm text-gray-600 mb-4" }, 
+                                isWatching ? "番组计划，欢迎访问我的时光机 每周的快乐源泉（实时更新）" : "那些年，我们一起追过的番。 （实时更新）",
+                                React.createElement("br"),
+                                React.createElement("span", { className: "text-xs text-gray-400 mt-2 block" }, `显示最近 ${limit} 条记录`)
+                            )
+                        ),
+                        React.createElement("a", { 
+                            href: `https://bgm.tv/user/${CONFIG.userId}${isWatching ? '' : 'collections'}`, 
+                            target: "_blank", 
+                            className: "mt-auto w-full py-2 rounded-xl bg-pink-500 text-white text-center text-sm font-medium hover:bg-pink-600 transition-colors" 
+                        }, "访问我的BGM主页查看更多")
+                    )
+                ),
+                // Anime Cards
+                animes.map((anime) => (
+                    // [修改] 将 motion.div 改为 motion.a 以实现跳转链接
+                    React.createElement(motion.a, {
+                        key: anime.id,
+                        href: `https://bgm.tv/subject/${anime.id}`, // 跳转到对应的 bangumi 详情页
+                        target: "_blank",
+                        rel: "noopener noreferrer",
+                        variants: itemVariants,
+                        whileHover: { y: -10, scale: 1.02 },
+                        className: "group relative w-full aspect-[2/3] rounded-3xl overflow-hidden cursor-pointer shadow-md hover:shadow-2xl transition-all duration-300 block" // 添加 block 确保布局正确
+                    },
+                        React.createElement("img", { src: anime.img, alt: anime.name, className: "absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" }),
+                        React.createElement("div", { className: "absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-80" }),
+                        
+                        // Score Badge
+                        React.createElement("div", { className: `absolute top-3 right-3 backdrop-blur text-white text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1 ${anime.score > 0 ? 'bg-yellow-400/90' : 'bg-gray-600/80'}` },
+                            anime.score > 0 ? (
+                                React.createElement(React.Fragment, null, 
+                                    React.createElement(Star, { className: "w-3 h-3 fill-current" }), " ", anime.score
+                                )
+                            ) : (
+                                React.createElement(React.Fragment, null,
+                                    // [修改] 将 BrainCircuit 换成 Star，并添加 fill-current 保持一致
+                                    React.createElement(Star, { className: "w-3 h-3 fill-current" }), " 思考中"
+                                )
+                            )
+                        ),
+
+                        React.createElement("div", { className: "absolute bottom-0 left-0 p-5 w-full" },
+                            React.createElement("h3", { className: "text-white font-bold text-lg leading-tight line-clamp-2" }, anime.name),
+                            React.createElement("div", { className: "flex items-center justify-between mt-2" },
+                                React.createElement("span", { className: "text-pink-300 text-xs font-medium flex items-center gap-1" },
+                                    React.createElement(Tv, { className: "w-3 h-3" }), isWatching ? `EP.${anime.ep}` : `${anime.ep}`
+                                ),
+                                React.createElement("span", { className: `${isWatching ? 'text-blue-300' : 'text-green-300'} text-xs font-bold flex items-center gap-1` },
+                                    isWatching ? React.createElement(PlayCircle, { className: "w-3 h-3" }) : React.createElement(CheckCircle2, { className: "w-3 h-3" }),
+                                    isWatching ? ' 正在追番' : ' 看完'
+                                )
+                            )
+                        )
+                    )
+                ))
+            );
+        };
+
+        // 6. Main Bangumi Section Container
+        const BangumiSection = () => {
+            const [activeTab, setActiveTab] = useState('watching');
+            
+            // 标签页定义
+            const tabs = [
+                { id: 'watching', label: '在看', icon: PlayCircle, color: 'bg-pink-500', textColor: 'text-pink-500' },
+                { id: 'watched', label: '看过', icon: History, color: 'bg-blue-500', textColor: 'text-blue-500' }
+            ];
+
+            return React.createElement("div", { className: "w-full max-w-6xl mx-auto px-6 py-20 relative z-10" },
+                // Header & Tabs
+                React.createElement("div", { className: "flex flex-col md:flex-row items-center justify-between mb-12 gap-6" },
+                    React.createElement("div", { className: "flex items-center gap-3" },
+                        React.createElement("div", { className: "w-2 h-8 bg-pink-500 rounded-full" }),
+                        React.createElement("h2", { className: "text-3xl font-bold text-gray-800" }, "Bangumi ", React.createElement("span", { className: "text-pink-500" }, "收藏"))
+                    ),
+                    
+                    // [修改] 带有动效的标签切换
+                    React.createElement("div", { className: "bg-white p-1.5 rounded-full shadow-sm border border-gray-100 flex relative" },
+                        tabs.map((tab) => {
+                            const isActive = activeTab === tab.id;
+                            return React.createElement("button", {
+                                key: tab.id,
+                                onClick: () => setActiveTab(tab.id),
+                                className: `relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-300 flex items-center gap-2 ${isActive ? 'text-white' : 'text-gray-500 hover:text-gray-800'}`
+                            },
+                                // 背景滑动动画层
+                                isActive && React.createElement(motion.div, {
+                                    layoutId: "activeTabBg",
+                                    className: `absolute inset-0 rounded-full shadow-md ${tab.color}`,
+                                    transition: { type: "spring", stiffness: 300, damping: 30 },
+                                    style: { zIndex: -1 } // 放在文字后面
+                                }),
+                                // 图标和文字
+                                React.createElement(tab.icon, { className: "w-4 h-4" }), 
+                                tab.label
+                            );
+                        })
+                    )
+                ),
+                // Content Area with AnimatePresence
+                React.createElement("div", { className: "min-h-[800px]" },
+                    React.createElement(AnimatePresence, { mode: "wait" },
+                        React.createElement(motion.div, {
+                            key: activeTab,
+                            initial: { opacity: 0, x: activeTab === 'watching' ? -20 : 20 },
+                            animate: { opacity: 1, x: 0 },
+                            exit: { opacity: 0, x: activeTab === 'watching' ? 20 : -20 },
+                            transition: { duration: 0.3 }
+                        }, React.createElement(AnimeGrid, { type: activeTab }))
+                    )
+                )
+            );
+        };
+
+        // 7. New Spotify Section Component (Updated Height to 800px)
+        const SpotifySection = ({ setIsIframeHovered }) => (
+            React.createElement(motion.section, { 
+                id: "music", 
+                className: "py-12 px-6 max-w-6xl mx-auto relative z-10",
+                // [修改] 为 Spotify 区域添加滚动重置动画
+                initial: { opacity: 0, y: 50 },
+                whileInView: { opacity: 1, y: 0 },
+                viewport: { once: false, amount: 0.2 }, // 反复触发
+                transition: { duration: 0.6 }
+            },
+                React.createElement("div", { className: "flex items-center gap-3 mb-8" },
+                    React.createElement("div", { className: "w-2 h-8 bg-green-500 rounded-full" }),
+                    React.createElement("h2", { className: "text-3xl font-bold text-gray-800" }, 
+                        "My ", React.createElement("span", { className: "text-green-500" }, "Spotify")
+                    )
+                ),
+                
+                React.createElement("div", { 
+                    className: "w-full overflow-hidden rounded-[2rem] shadow-2xl border-4 border-white/50 bg-black/5 backdrop-blur-sm",
+                    onMouseEnter: () => setIsIframeHovered(true),
+                    onMouseLeave: () => setIsIframeHovered(false)
+                },
+                    React.createElement("iframe", {
+                        style: { borderRadius: '12px' },
+                        src: CONFIG.spotifyUrl,
+                        width: "100%",
+                        height: "800", // Increased height
+                        frameBorder: "0",
+                        allowFullScreen: "",
+                        allow: "autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture",
+                        loading: "lazy",
+                        title: "Spotify Playlist"
+                    })
+                ),
+                // Added note here
+                React.createElement("p", { className: "text-xs text-gray-400 mt-3 text-center tracking-wide" }, "默认排序最下面是最新 此组件最多只显示99首")
+            )
+        );
+
+        // 8. Game Modal Component
+        const GameModal = ({ isOpen, onClose }) => {
+            if (!isOpen) return null;
+
+            return React.createElement(AnimatePresence, null,
+                isOpen && React.createElement(motion.div, {
+                    initial: { opacity: 0 },
+                    animate: { opacity: 1 },
+                    exit: { opacity: 0 },
+                    className: "fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 md:p-10"
+                },
+                    React.createElement(motion.button, {
+                        initial: { scale: 0 },
+                        animate: { scale: 1 },
+                        onClick: onClose,
+                        className: "absolute top-6 right-6 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-50 backdrop-blur-sm border border-white/10"
+                    }, React.createElement(X, { className: "w-6 h-6" })),
+                    
+                    React.createElement(motion.div, {
+                        initial: { scale: 0.9, opacity: 0 },
+                        animate: { scale: 1, opacity: 1 },
+                        transition: { delay: 0.1 },
+                        className: "w-full h-full max-w-6xl bg-black rounded-3xl overflow-hidden border border-white/10 shadow-2xl relative"
+                    },
+                        React.createElement("iframe", {
+                            src: "https://aidn.jp/mikutap/",
+                            className: "w-full h-full border-0",
+                            title: "MikuTap",
+                            allow: "autoplay; fullscreen"
+                        })
+                    )
+                )
+            );
+        };
+
+        // --- 主应用 (Main App) ---
+        const App = () => {
+            const [isGameOpen, setIsGameOpen] = useState(false);
+            const [isIframeHovered, setIsIframeHovered] = useState(false); // New state for iframe hover
+
+            // Combine conditions for hiding cursor
+            const shouldHideCursor = isGameOpen || isIframeHovered;
+
+            return React.createElement("div", { className: "bg-gray-50 min-h-screen font-sans text-slate-800 overflow-x-hidden selection:bg-blue-200 selection:text-blue-900" },
+                React.createElement(CustomCursor, { hidden: shouldHideCursor }),
+                React.createElement(GameModal, { isOpen: isGameOpen, onClose: () => setIsGameOpen(false) }),
+                
+                // 背景装饰
+                React.createElement("div", { className: "fixed inset-0 pointer-events-none z-0 overflow-hidden" },
+                    React.createElement("div", { className: "absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-200/30 rounded-full blur-[120px]" }),
+                    React.createElement("div", { className: "absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-pink-200/30 rounded-full blur-[120px]" })
+                ),
+
+                // 导航栏
+                React.createElement("nav", { className: "fixed top-0 w-full z-50 px-6 py-4 flex justify-center" },
+                    React.createElement(GlassCard, { className: "px-8 py-3 flex items-center justify-between gap-4 md:gap-8 !rounded-full !bg-white/80 w-full max-w-3xl" },
+                        // Left: Logo
+                        React.createElement("div", { className: "flex-shrink-0" },
+                            React.createElement("div", { className: "w-10 h-10 rounded-full overflow-hidden border border-gray-200 shadow-sm cursor-pointer hover:scale-105 transition-transform" },
+                                React.createElement("a", { href: "#home" },
+                                    React.createElement("img", { src: CONFIG.avatar, alt: "Logo", className: "w-full h-full object-cover" })
+                                )
+                            )
+                        ),
+
+                        // Center: Navigation Links
+                        React.createElement("div", { className: "flex items-center gap-4 md:gap-8 overflow-x-auto no-scrollbar px-2" },
+                            React.createElement("a", { href: "#home", className: "font-bold text-gray-800 hover:text-blue-500 transition-colors whitespace-nowrap" }, "Home"),
+                            React.createElement("a", { href: "#bangumi", className: "font-medium text-gray-600 hover:text-pink-500 transition-colors whitespace-nowrap" }, "Bangumi"),
+                            React.createElement("a", { href: "#music", className: "font-medium text-gray-600 hover:text-green-500 transition-colors whitespace-nowrap" }, "Music"),
+                            React.createElement("a", { href: "#links", className: "font-medium text-gray-600 hover:text-blue-500 transition-colors whitespace-nowrap" }, "Links"),
+                            React.createElement("a", { href: "#contact", className: "font-medium text-gray-600 hover:text-blue-500 transition-colors whitespace-nowrap" }, "Contact")
+                        ),
+
+                        // Right: Game Button
+                        React.createElement("div", { className: "flex-shrink-0" },
+                            React.createElement("button", {
+                                onClick: () => setIsGameOpen(true),
+                                className: "w-10 h-10 flex items-center justify-center rounded-full bg-slate-100 hover:bg-pink-100 text-slate-600 hover:text-pink-500 transition-colors shadow-sm",
+                                title: "Play MikuTap"
+                            }, React.createElement(Gamepad2, { className: "w-5 h-5" }))
+                        )
+                    )
+                ),
+
+                // 首屏 (Hero Section)
+                React.createElement("section", { id: "home", className: "relative min-h-screen flex flex-col items-center justify-center px-6 pt-20 z-10" },
+                    React.createElement(motion.div, {
+                        initial: { opacity: 0, scale: 0.9 },
+                        animate: { opacity: 1, scale: 1 },
+                        transition: { duration: 0.8 },
+                        className: "relative z-20 text-center max-w-4xl"
+                    },
+                        // [修改] 头像部分：添加旋转光晕和弹性交互
+                        React.createElement(motion.div, {
+                            className: "relative mb-8 inline-block cursor-pointer",
+                            whileHover: { scale: 1.1 },
+                            whileTap: { scale: 0.95 },
+                            transition: { type: "spring", stiffness: 400, damping: 17 }
+                        },
+                            // 背景旋转光晕
+                            React.createElement(motion.div, {
+                                className: "absolute -inset-1 bg-gradient-to-tr from-blue-300 via-purple-300 to-pink-300 rounded-full opacity-70 blur-lg",
+                                animate: { rotate: 360, scale: [1, 1.05, 1] },
+                                transition: { 
+                                    rotate: { duration: 8, repeat: Infinity, ease: "linear" },
+                                    scale: { duration: 2, repeat: Infinity, ease: "easeInOut" } 
+                                }
+                            }),
+                            // 头像容器
+                            React.createElement("div", { className: "relative p-1.5 rounded-full bg-white/80 backdrop-blur-sm shadow-xl" },
+                                React.createElement("img", { src: CONFIG.avatar, alt: "Avatar", className: "w-36 h-36 rounded-full object-cover border border-gray-100" })
+                            )
+                        ),
+
+                        // [修改] 标题部分：拆分文字以实现独立交互，添加深阴影
+                        React.createElement(motion.div, {
+                             className: "text-5xl md:text-7xl font-black tracking-tight mb-6 cursor-default"
+                        },
+                            // "Welcome" - Interactive
+                            React.createElement(motion.span, {
+                                className: "inline-block text-slate-800 mr-3 shadow-text-solid", // 使用实心文字阴影
+                                whileHover: { y: -5, color: "#475569" },
+                                whileTap: { scale: 0.9, color: "#ff7eb3" }, // 点击变粉色
+                                transition: { type: "spring", stiffness: 300 }
+                            }, "Welcome"),
+
+                            // [修改] "AKISATO" - 添加 motion 和交互，使用渐变阴影
+                            React.createElement(motion.span, {
+                                className: "text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 inline-block shadow-text-gradient",
+                                whileHover: { scale: 1.05 },
+                                whileTap: { scale: 0.95, rotate: 3 }, // 点击微旋转
+                                transition: { type: "spring", stiffness: 300 }
+                            }, "AKISATO"),
+                            
+                            React.createElement("br"),
+                            
+                            // "の" - Interactive
+                            React.createElement(motion.span, {
+                                className: "inline-block text-slate-800 mr-3 shadow-text-solid", // 使用实心文字阴影
+                                whileHover: { y: -5, rotate: 10, color: "#475569" },
+                                whileTap: { scale: 1.2, rotate: -20, color: "#64d2ff" }, // 点击变蓝色并旋转
+                                transition: { type: "spring", stiffness: 300 }
+                            }, "の"),
+                            
+                            // [修改] "世界" - 添加 motion 和交互，使用渐变阴影
+                            React.createElement(motion.span, {
+                                className: "text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400 inline-block shadow-text-gradient",
+                                whileHover: { scale: 1.05 },
+                                whileTap: { scale: 0.95, rotate: -3 }, // 点击微旋转
+                                transition: { type: "spring", stiffness: 300 }
+                            }, "世界.")
+                        ),
+
+                        // [修改] 描述文字：也加上极轻微的阴影增加可读性
+                        React.createElement(motion.p, {
+                            className: "text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed mb-10 font-medium",
+                            style: { textShadow: "0 1px 2px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.05)" }, // 增加一点白色高光让文字更“凸”
+                            initial: { y: 20, opacity: 0 },
+                            animate: { y: 0, opacity: 1 },
+                            transition: { delay: 0.4 }
+                        },
+                            "喜欢瞎折腾的看番糕手，这里是我的个人空间 和我各网站的中转站捏",
+                            React.createElement("br", { className: "hidden md:block" }),
+                        ),
+                        React.createElement(motion.div, {
+                            className: "flex justify-center gap-4",
+                            initial: { y: 20, opacity: 0 },
+                            animate: { y: 0, opacity: 1 },
+                            transition: { delay: 0.6 }
+                        },
+                            React.createElement("a", {
+                                href: "#about",
+                                className: "px-8 py-3 rounded-full bg-slate-900 text-white font-medium hover:bg-slate-800 transition-all shadow-lg hover:shadow-blue-500/25 flex items-center gap-2 group"
+                            }, "随便看看 ", React.createElement(ArrowRight, { className: "w-4 h-4 group-hover:translate-x-1 transition-transform" }))
+                        )
+                    ),
+                    React.createElement(ParallaxCharacter, { src: CONFIG.charaRight, side: "right", offset: 80 })
+                ),
+
+                // 自我介绍 (About Section)
+                React.createElement("section", { id: "about", className: "py-20 px-6 relative z-10 bg-white/50 backdrop-blur-sm" },
+                    React.createElement("div", { className: "max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center" },
+                        React.createElement(motion.div, {
+                            initial: { opacity: 0, x: -50 },
+                            whileInView: { opacity: 1, x: 0 },
+                            // [修改] 反复触发
+                            viewport: { once: false, amount: 0.3 }
+                        },
+                            React.createElement("img", { src: CONFIG.featuredImg, alt: "Featured", className: "rounded-[3rem] shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500 w-full max-w-md mx-auto border-8 border-white object-cover" })
+                        ),
+                        React.createElement(motion.div, {
+                            initial: { opacity: 0, x: 50 },
+                            whileInView: { opacity: 1, x: 0 },
+                            // [修改] 反复触发
+                            viewport: { once: false, amount: 0.3 },
+                            className: "space-y-6"
+                        },
+                            React.createElement("h3", { className: "text-sm font-bold uppercase tracking-widest text-blue-500" }, "我的其他网页"),
+                            
+                            React.createElement("h2", { className: "text-4xl font-bold text-gray-900" }, "与其内卷", React.createElement("br"), "不如躺平看番"),
+                            
+                            React.createElement("p", { className: "text-gray-600 leading-relaxed text-lg" },
+                                "欢迎来到我的个人空间！其实我不是什么技术大佬，建这个网站纯粹是一时兴起——毕竟，拥有一片完全属于自己的互联网小天地，感觉真的很棒，对吧？平日里最大的爱好就是打打游戏、追追新番。为了方便自己，顺手折腾了一些实用工具（比如下面的 Alist 和 AI 助手）。这里没有复杂的代码哲学，只有我喜欢的动漫、音乐和游戏记录。随意逛逛吧，希望能让你感到放松。"
+                            ),
+                            
+                            // [恢复] Alist 和 WebUI 在这里
+                            React.createElement("div", { className: "grid grid-cols-2 gap-6 pt-4" },
+                                // Link 1: Alist
+                                React.createElement(motion.a, { 
+                                    href: "",
+                                    target: "_blank",
+                                    rel: "noopener noreferrer",
+                                    whileHover: { scale: 1.05 },
+                                    whileTap: { scale: 0.95 },
+                                    className: "p-4 rounded-2xl bg-blue-50 cursor-pointer block group hover:bg-blue-100 transition-colors"
+                                },
+                                    React.createElement("h4", { className: "font-bold text-blue-900 mb-1 flex items-center gap-2" }, 
+                                        "Alist", 
+                                        React.createElement(ExternalLink, { className: "w-3 h-3 opacity-50" })
+                                    ),
+                                    React.createElement("p", { className: "text-sm text-blue-700" }, "我的云端U盘")
+                                ),
+                                // Link 2: Open WebUI
+                                React.createElement(motion.a, { 
+                                    href: "",
+                                    target: "_blank",
+                                    rel: "noopener noreferrer",
+                                    whileHover: { scale: 1.05 },
+                                    whileTap: { scale: 0.95 },
+                                    className: "p-4 rounded-2xl bg-pink-50 cursor-pointer block group hover:bg-pink-100 transition-colors"
+                                },
+                                    React.createElement("h4", { className: "font-bold text-pink-900 mb-1 flex items-center gap-2" }, 
+                                        "Open WebUI",
+                                        React.createElement(ExternalLink, { className: "w-3 h-3 opacity-50" })
+                                    ),
+                                    React.createElement("p", { className: "text-sm text-pink-700" }, "AI 聊天助手")
+                                )
+                            )
+                        )
+                    )
+                ),
+
+                // Bangumi Section
+                React.createElement("section", { id: "bangumi", className: "relative bg-slate-50/50" },
+                    React.createElement(BangumiSection),
+                    React.createElement("div", { className: "absolute top-20 -left-20 w-64 opacity-20 pointer-events-none rotate-12 hidden lg:block" },
+                        React.createElement("img", { src: CONFIG.charaLeft, alt: "Decor" })
+                    )
+                ),
+
+                // Spotify Section - Pass setIsIframeHovered
+                React.createElement(SpotifySection, { setIsIframeHovered }),
+
+                // Links Section
+        React.createElement("section", { id: "links", className: "py-24 px-6 max-w-6xl mx-auto z-10 relative" },
+            React.createElement("div", { className: "text-center mb-16" },
+                React.createElement("h2", { className: "text-4xl font-bold text-gray-900 mb-4" }, "个人社交媒体"),
+                React.createElement("p", { className: "text-gray-500" }, "连接至我的其他数字世界")
+            ),
+            
+            // [修改] 使用 motion.div 包装容器以实现交错动画
+            // [修改] 布局改为 Flex + justify-center 以实现完美居中对齐
+            React.createElement(motion.div, { 
+                className: "flex flex-wrap justify-center gap-6",
+                initial: "hidden",
+                whileInView: "visible",
+                // [修改] 反复触发
+                viewport: { once: false, amount: 0.2, margin: "-50px" },
+                variants: {
+                    hidden: { opacity: 0 },
+                    visible: {
+                        opacity: 1,
+                        transition: { staggerChildren: 0.1 } // 子元素依次延迟 0.1s 出现
+                    }
+                }
+            },
+                // 卡片宽度设置：
+                // 移动端 w-full (100%)
+                // 平板端 w-[calc(50%-12px)] (一行2个，减去gap的一半)
+                // 桌面端 w-[calc(25%-18px)] (一行4个，减去gap的四分之三)
+                // 这样配合 flex justify-center 可以让最后一行不满时自动居中
+                
+                // 1. Spotify
+                React.createElement(SocialCard, { 
+                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    icon: Music, title: "Spotify", subtitle: "我的歌单", color: "bg-green-500", href: CONFIG.spotifyProfile 
+                }),
+                
+                // 2. Bangumi
+                React.createElement(SocialCard, { 
+                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    icon: BangumiIcon, title: "Bangumi", subtitle: "我的追番记录", color: "bg-rose-500", href: "https://bgm.tv/user/648470" 
+                }),
+
+                // 3. Bilibili
+                React.createElement(SocialCard, { 
+                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    icon: Tv, title: "Bilibili", subtitle: "阿姨退钱！", color: "bg-pink-400", href: "https://space.bilibili.com/33013640" 
+                }),
+
+                // 4. Steam
+                // [修改] 使用 SteamIcon
+                React.createElement(SocialCard, { 
+                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    icon: SteamIcon, title: "Steam", subtitle: "游戏启动！", color: "bg-indigo-600", href: "https://steamcommunity.com/id/_AKISATO/" 
+                }),
+
+                // 5. Linux.do
+                React.createElement(SocialCard, { 
+                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    icon: Terminal, title: "Linux.do", subtitle: "摸鱼技术社区", color: "bg-violet-600", href: "https://linux.do/u/akisato/summary" 
+                }),
+
+                // 6. Twitter
+                React.createElement(SocialCard, { 
+                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    icon: Twitter, title: "Twitter", subtitle: "啥都没有！", color: "bg-blue-400", href: "https://twitter.com" 
+                }),
+
+                // 7. GitHub
+                React.createElement(SocialCard, { 
+                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    icon: Github, title: "GitHub", subtitle: "@DannyGuo57", color: "bg-gray-800", href: "https://github.com/DannyGuo57" 
+                })
+            )
+        ),
+
+        // Footer
+        React.createElement("footer", { id: "contact", className: "relative bg-white pt-20 pb-10 px-6 overflow-hidden" },
+            React.createElement("div", { className: "max-w-4xl mx-auto text-center relative z-10" },
+                React.createElement("h2", { className: "text-3xl font-bold text-gray-900 mb-6" }, "联系我"),
+                React.createElement("p", { className: "text-gray-500 mb-10" }, "无论是技术交流，还是番剧推荐，随时欢迎联系。", React.createElement("br"), "1326674097@qq.com"),
+                
+                // Mail and QQ Icons Row
+                React.createElement("div", { className: "flex justify-center gap-6 mb-8" },
+                    // Mail
+                    React.createElement(motion.a, {
+                        href: "mailto:1326674097@qq.com",
+                        className: "p-4 bg-blue-50 rounded-full text-blue-600 hover:bg-blue-100 transition-colors",
+                        whileHover: { scale: 1.1, rotate: 10 }
+                    }, React.createElement(Mail, { className: "w-8 h-8" })),
+
+                    // QQ
+                    React.createElement(motion.a, {
+                        href: "https://qm.qq.com/q/4U3sSjGOSQ",
+                        target: "_blank", 
+                        rel: "noopener noreferrer",
+                        className: "p-4 bg-sky-50 rounded-full text-sky-500 hover:bg-sky-100 transition-colors",
+                        whileHover: { scale: 1.1, rotate: -10 }
+                    }, React.createElement(QQIcon, { className: "w-8 h-8" }))
+                ),
+
+                React.createElement("div", { className: "border-t border-gray-100 pt-8 text-sm text-gray-400 flex flex-col md:flex-row justify-between items-center gap-4" },
+                    React.createElement("p", null, "by @AKISATO 2025"),
+                    React.createElement("div", { className: "flex gap-4" },
+                        React.createElement("a", { href: "#", className: "hover:text-gray-600" }, "†升天†")
+                    )
+                )
+            ),
+            // 右下角装饰
+            React.createElement("div", { className: "absolute bottom-0 right-0 opacity-10 w-96 pointer-events-none grayscale" },
+                React.createElement("img", { src: CONFIG.charaLeft, alt: "Footer Decor" })
+            )
+        )
+    );
+};
+
+// 启动应用
+const root = createRoot(document.getElementById('root'));
+root.render(React.createElement(App));
+    </script>
+</body>
+</html>
