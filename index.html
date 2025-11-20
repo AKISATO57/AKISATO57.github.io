@@ -50,48 +50,46 @@
         /* 防止 iOS 点击高亮 */
         * { -webkit-tap-highlight-color: transparent; }
 
-        /* [修改] 优化阴影逻辑 */
-        /* 实心文字（黑色）使用 text-shadow */
+        /* 优化阴影逻辑 */
         .shadow-text-solid {
             text-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
         }
-        /* 渐变文字（透明背景）使用 drop-shadow，避免颜色变暗发脏 */
         .shadow-text-gradient {
-            filter: drop-shadow(0 2px 4px rgba(96, 165, 250, 0.2)); /* 使用淡蓝色阴影代替黑色 */
+            filter: drop-shadow(0 2px 4px rgba(96, 165, 250, 0.2)); 
         }
 
-        /* [新增] 全局禁止拖拽图片和链接，防止浏览器默认的半透明预览图出现 */
+        /* 全局禁止拖拽图片和链接 */
         img, a {
             -webkit-user-drag: none;
             user-drag: none;
-            -webkit-user-select: none; /* 顺便防止被选中 */
+            -webkit-user-select: none; 
             user-select: none;
         }
 
-        /* [新增] 针对导航栏的超细滚动条样式 */
+        /* 针对导航栏的超细滚动条样式 */
         .thin-scrollbar::-webkit-scrollbar {
-            height: 3px; /* 水平滚动条的高度，设为 3px 极细 */
-            width: 3px;  /* 垂直滚动条的宽度 */
+            height: 3px; 
+            width: 3px;  
         }
         .thin-scrollbar::-webkit-scrollbar-track {
-            background: transparent; /* 轨道透明 */
+            background: transparent; 
         }
         .thin-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(203, 213, 225, 0.5); /* 使用半透明的淡灰色 */
-            border-radius: 10px; /* 圆角 */
+            background: rgba(203, 213, 225, 0.5); 
+            border-radius: 10px; 
         }
         .thin-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(148, 163, 184, 0.8); /* 悬停时稍微加深 */
+            background: rgba(148, 163, 184, 0.8); 
         }
         
-        /* [新增] 硬件加速类，用于优化背景大图渲染 */
+        /* 硬件加速类 */
         .gpu-accelerated {
             will-change: transform;
             transform: translate3d(0, 0, 0);
         }
     </style>
 </head>
-<!-- [修改] 在 body 上也添加 ondragstart="return false" 作为双重保险 -->
+<!-- 在 body 上添加 ondragstart="return false" 防止拖拽 -->
 <body class="bg-gray-50 text-slate-800 overflow-x-hidden selection:bg-pink-200 selection:text-pink-900" ondragstart="return false;">
     <div id="root"></div>
 
@@ -100,27 +98,38 @@
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
         import { motion, useScroll, useTransform, useSpring, useMotionValue, AnimatePresence } from 'framer-motion';
-        // 引入所需图标
         import { ArrowRight, ExternalLink, Mail, Github, Twitter, Tv, Disc, Star, MessageCircle, BrainCircuit, CheckCircle2, PlayCircle, History, Gamepad2, X, Music, Cloud, Bot, Terminal, BookOpen } from 'lucide-react';
 
         // --- 配置部分 ---
         const CONFIG = {
             userId: '648470',
-            // [预览修改] 已替换本地路径为网络占位图，以便预览显示
             avatar: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8HRpHjs80LFuF_yfs2Avw8wPzD918gACRjcAAtPG8VTjbO0fkjB6CDYE.png',
             bgImage: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8HZpHjs-DKXibaPMoG3c_5dyf0rAIAACSDcAAtPG8VQtPYyl1yUINTYE.png', 
             featured: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8HZpHjs-DKXibaPMoG3c_5dyf0rAIAACSDcAAtPG8VQtPYyl1yUINTYE.png',
             featuredImg: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8HhpHjs_vKh-Qka-4gQybCqIhAS0ewACSjcAAtPG8VT7a-U_eQ_3IzYE.png', 
-            // 注意：这里原本是透明背景的人物立绘，暂用占位图代替
             charaLeft: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8J9pHjxsLC4jgWe3HKIv202ir9kB8gACcTcAAtPG8VSEHH0bQJnjVzYE.png',
             charaRight: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8PFpHj2I2D0wGFkFbiTpRK3ngC3iHQACwzcAAtPG8VSmsQKPCEU9xTYE.png',
-            spotifyUrl: 'https://open.spotify.com/embed/playlist/5XKyDV6Snj9eBXO5rcuRpo?utm_source=generator&theme=0', // Spotify Embed URL
-            spotifyProfile: 'https://open.spotify.com/user/1adxgwu2yp1uvvqh5yd60y99o', // Spotify Profile URL
+            spotifyUrl: 'https://open.spotify.com/embed/playlist/5XKyDV6Snj9eBXO5rcuRpo?utm_source=generator&theme=0', 
+            spotifyProfile: 'https://open.spotify.com/user/1adxgwu2yp1uvvqh5yd60y99o', 
         };
 
         // --- 组件定义 ---
 
-        // 0. Custom Icons - QQ Penguin (使用您提供的 SVG 路径)
+        // Bangumi Icon
+        const BangumiIcon = (props) => (
+            React.createElement("svg", {
+                ...props,
+                viewBox: "0 0 1024 1024",
+                version: "1.1",
+                xmlns: "http://www.w3.org/2000/svg",
+                fill: "currentColor" 
+            },
+                React.createElement("path", { d: "M228.115268 615.399298a12.300795 12.300795 0 0 0 11.35458 7.569719 12.471113 12.471113 0 0 0 4.749999-0.965139l147.609537-61.882459a12.300795 12.300795 0 0 0 0.26494-22.557765l-147.609537-66.235049a12.300795 12.300795 0 1 0-10.067727 22.444219l121.740019 54.634453-121.456155 50.906366a12.300795 12.300795 0 0 0-6.585656 16.085655zM399.020617 627.965033H239.469848a12.300795 12.300795 0 0 0 0 24.601589h159.550769a12.300795 12.300795 0 0 0 0-24.601589zM399.020617 667.460046H239.469848a12.300795 12.300795 0 0 0 0 24.601589h159.550769a12.300795 12.300795 0 0 0 0-24.601589zM872.941851 476.892349l-133.283841 58.381464a12.300795 12.300795 0 0 0-0.397411 22.349598l133.302766 64.058754a12.073703 12.073703 0 0 0 5.317729 1.23008 12.300795 12.300795 0 0 0 5.336652-23.390435l-109.15536-52.42031L882.896033 499.469038a12.300795 12.300795 0 1 0-9.954182-22.576689zM877.881094 627.965033h-148.101569a12.300795 12.300795 0 0 0 0 24.601589h148.101569a12.300795 12.300795 0 0 0 0-24.601589zM877.881094 667.460046h-148.101569a12.300795 12.300795 0 0 0 0 24.601589h148.101569a12.300795 12.300795 0 0 0 0-24.601589zM644.866193 537.128395h-162.919295a12.28187 12.28187 0 0 0-10.711153 18.318722l81.374488 145.130453a12.300795 12.300795 0 0 0 21.460155 0l81.374489-145.130453a12.300795 12.300795 0 0 0-10.730078-18.318722z m-81.374488 132.299778l-60.444213-107.698189h120.888426z" }),
+                React.createElement("path", { d: "M891.411968 334.960102H648.405037c-6.812748-15.13944-19.813742-28.386449-36.864535-38.018917L803.092262 19.283861a12.300795 12.300795 0 0 0-20.249001-13.966133L588.566402 286.873457a147.723082 147.723082 0 0 0-45.418319-7.001991 151.507942 151.507942 0 0 0-31.887445 3.368526L239.980804 4.712151A12.300795 12.300795 0 0 0 222.437978 21.87649l262.726051 269.803739c-22.14143 9.821711-39.116527 25.112546-47.310749 43.242025H132.547555A91.763929 91.763929 0 0 0 40.764702 426.705107v414.44216A91.763929 91.763929 0 0 0 132.547555 932.967969h268.024855l-19.908363 46.989036c-12.641432 29.881469 22.614538 57.094612 48.294812 37.299794L538.473781 932.967969h352.938187a91.763929 91.763929 0 0 0 91.782853-91.782853v-414.442161a91.763929 91.763929 0 0 0-91.782853-91.782853z m34.839635 463.815658a60.709153 60.709153 0 0 1-60.709153 60.709153H585.670984L487.870204 932.967969l-77.002975 57.851583 24.412346-57.851583 31.016927-73.483056H198.082405A60.728077 60.728077 0 0 1 137.27863 798.737912V440.330602a60.728077 60.728077 0 0 1 60.728077-60.728077h667.460046a60.709153 60.709153 0 0 1 60.709153 60.728077z" })
+            )
+        );
+
+        // QQ Icon
         const QQIcon = (props) => (
             React.createElement("svg", {
                 ...props,
@@ -135,21 +144,7 @@
             )
         );
 
-        // [新增] Bangumi Icon (使用您提供的 SVG 路径)
-        const BangumiIcon = (props) => (
-            React.createElement("svg", {
-                ...props,
-                viewBox: "0 0 1024 1024",
-                version: "1.1",
-                xmlns: "http://www.w3.org/2000/svg",
-                fill: "currentColor" 
-            },
-                React.createElement("path", { d: "M228.115268 615.399298a12.300795 12.300795 0 0 0 11.35458 7.569719 12.471113 12.471113 0 0 0 4.749999-0.965139l147.609537-61.882459a12.300795 12.300795 0 0 0 0.26494-22.557765l-147.609537-66.235049a12.300795 12.300795 0 1 0-10.067727 22.444219l121.740019 54.634453-121.456155 50.906366a12.300795 12.300795 0 0 0-6.585656 16.085655zM399.020617 627.965033H239.469848a12.300795 12.300795 0 0 0 0 24.601589h159.550769a12.300795 12.300795 0 0 0 0-24.601589zM399.020617 667.460046H239.469848a12.300795 12.300795 0 0 0 0 24.601589h159.550769a12.300795 12.300795 0 0 0 0-24.601589zM872.941851 476.892349l-133.283841 58.381464a12.300795 12.300795 0 0 0-0.397411 22.349598l133.302766 64.058754a12.073703 12.073703 0 0 0 5.317729 1.23008 12.300795 12.300795 0 0 0 5.336652-23.390435l-109.15536-52.42031L882.896033 499.469038a12.300795 12.300795 0 1 0-9.954182-22.576689zM877.881094 627.965033h-148.101569a12.300795 12.300795 0 0 0 0 24.601589h148.101569a12.300795 12.300795 0 0 0 0-24.601589zM877.881094 667.460046h-148.101569a12.300795 12.300795 0 0 0 0 24.601589h148.101569a12.300795 12.300795 0 0 0 0-24.601589zM644.866193 537.128395h-162.919295a12.28187 12.28187 0 0 0-10.711153 18.318722l81.374488 145.130453a12.300795 12.300795 0 0 0 21.460155 0l81.374489-145.130453a12.300795 12.300795 0 0 0-10.730078-18.318722z m-81.374488 132.299778l-60.444213-107.698189h120.888426z" }),
-                React.createElement("path", { d: "M891.411968 334.960102H648.405037c-6.812748-15.13944-19.813742-28.386449-36.864535-38.018917L803.092262 19.283861a12.300795 12.300795 0 0 0-20.249001-13.966133L588.566402 286.873457a147.723082 147.723082 0 0 0-45.418319-7.001991 151.507942 151.507942 0 0 0-31.887445 3.368526L239.980804 4.712151A12.300795 12.300795 0 0 0 222.437978 21.87649l262.726051 269.803739c-22.14143 9.821711-39.116527 25.112546-47.310749 43.242025H132.547555A91.763929 91.763929 0 0 0 40.764702 426.705107v414.44216A91.763929 91.763929 0 0 0 132.547555 932.967969h268.024855l-19.908363 46.989036c-12.641432 29.881469 22.614538 57.094612 48.294812 37.299794L538.473781 932.967969h352.938187a91.763929 91.763929 0 0 0 91.782853-91.782853v-414.442161a91.763929 91.763929 0 0 0-91.782853-91.782853z m34.839635 463.815658a60.709153 60.709153 0 0 1-60.709153 60.709153H585.670984L487.870204 932.967969l-77.002975 57.851583 24.412346-57.851583 31.016927-73.483056H198.082405A60.728077 60.728077 0 0 1 137.27863 798.737912V440.330602a60.728077 60.728077 0 0 1 60.728077-60.728077h667.460046a60.709153 60.709153 0 0 1 60.709153 60.728077z" })
-            )
-        );
-
-        // [新增] Steam Icon (使用您提供的 SVG 路径)
+        // Steam Icon
         const SteamIcon = (props) => (
             React.createElement("svg", {
                 ...props,
@@ -164,47 +159,102 @@
             )
         );
 
-        // 1. Custom Cursor with Particles
+        // 1. Custom Cursor with Particles - [极致优化版]
         const CustomCursor = ({ hidden }) => {
             const cursorX = useMotionValue(-100);
             const cursorY = useMotionValue(-100);
             
+            // 鼠标模式：使用 Spring 物理效果，平滑
             const springConfig = { damping: 20, stiffness: 400 }; 
             const cursorXSpring = useSpring(cursorX, springConfig);
             const cursorYSpring = useSpring(cursorY, springConfig);
 
             const [particles, setParticles] = useState([]);
             const [isClicking, setIsClicking] = useState(false);
-            const [isTouch, setIsTouch] = useState(false);
             
-            // [性能极限优化] 
-            // 1. 移除所有 setTimeout/clearTimeout，改用时间戳轮询 (Polling)
-            // 2. 避免在 touchmove 中进行任何内存分配
-            const [isIdle, setIsIdle] = useState(false);
-            const lastInteractionTime = useRef(Date.now()); // 使用 Ref 记录最后活动时间，不触发渲染
+            // 状态区分：是否为触摸设备
+            const [isTouch, setIsTouch] = useState(false);
+            const isTouchRef = useRef(false); // Ref 用于在事件循环中避免闭包问题
 
-            // 启动一个低频轮询来检查是否闲置
+            // 闲置检测逻辑
+            const [isIdle, setIsIdle] = useState(false);
+            const lastInteractionTime = useRef(Date.now());
+
+            // 1. 闲置检测轮询 (仅针对触摸设备有效)
             useEffect(() => {
                 const checkIdle = () => {
-                    // 检查距离上次活动是否超过 500ms
-                    if (Date.now() - lastInteractionTime.current > 500) {
-                        setIsIdle(true); // 只有状态真正改变时 React 才会渲染，开销很小
+                    if (isTouchRef.current) {
+                        if (Date.now() - lastInteractionTime.current > 500) {
+                            setIsIdle(true);
+                        } else {
+                            setIsIdle(false);
+                        }
                     } else {
+                        // PC 端永不闲置
                         setIsIdle(false);
                     }
                 };
-                const interval = setInterval(checkIdle, 100); // 每100ms检查一次，完全不影响主线程
+                const interval = setInterval(checkIdle, 100); 
                 return () => clearInterval(interval);
             }, []);
 
+            // 2. 事件监听逻辑
             useEffect(() => {
                 let idCounter = 0;
-                const lastParticleTime = { current: 0 }; // 本地变量代替 ref，减少闭包查找
+                const lastParticleTime = { current: 0 };
 
-                const handleTouchStart = (e) => {
+                // 鼠标移动处理 (PC)
+                const onMouseMove = (e) => {
+                    // 如果之前被标记为触摸设备，这里恢复为鼠标模式前做个检查
+                    // 但通常混合设备很难处理，这里优先信任 touchstart
+                    if (isTouchRef.current) return; 
+
+                    // 更新坐标
+                    cursorX.set(e.clientX);
+                    cursorY.set(e.clientY);
+                    lastInteractionTime.current = Date.now(); // 活跃时间
+
+                    // PC端生成粒子
+                    const now = Date.now();
+                    if (now - lastParticleTime.current > 40 && Math.random() > 0.7) {
+                        lastParticleTime.current = now;
+                        const id = idCounter++;
+                        const newParticle = {
+                            id,
+                            x: e.clientX,
+                            y: e.clientY,
+                            color: Math.random() > 0.5 ? '#64d2ff' : '#ff7eb3'
+                        };
+                        setParticles(prev => [...prev.slice(-10), newParticle]); 
+                        setTimeout(() => setParticles(prev => prev.filter(p => p.id !== id)), 600);
+                    }
+                };
+
+                // 触摸移动处理 (Mobile)
+                const onTouchMove = (e) => {
+                    // 只要触发了 touch，就锁定为触摸模式
+                    if (!isTouchRef.current) {
+                        isTouchRef.current = true;
+                        setIsTouch(true);
+                    }
+                    
+                    lastInteractionTime.current = Date.now(); // 活跃时间
+
+                    if (e.touches && e.touches.length > 0) {
+                        const touch = e.touches[0];
+                        cursorX.set(touch.clientX);
+                        cursorY.set(touch.clientY);
+                    }
+                    
+                    // 手机端完全禁用粒子生成，保证绝对流畅
+                };
+                
+                // 触摸开始：立即唤醒
+                const onTouchStart = (e) => {
+                    isTouchRef.current = true;
                     setIsTouch(true);
+                    lastInteractionTime.current = Date.now();
                     setIsClicking(true);
-                    lastInteractionTime.current = Date.now(); // 仅更新时间戳
                     
                     if (e.touches && e.touches.length > 0) {
                         cursorX.set(e.touches[0].clientX);
@@ -212,59 +262,30 @@
                     }
                 };
 
-                const moveCursor = (e) => {
-                    lastInteractionTime.current = Date.now(); // [极速] 仅更新时间戳，零内存开销
+                const onMouseDown = () => setIsClicking(true);
+                const onMouseUp = () => setIsClicking(false);
+                const onTouchEnd = () => setIsClicking(false);
 
-                    let clientX, clientY;
-                    // 简单的坐标提取
-                    if (e.touches && e.touches.length > 0) {
-                        setIsTouch(true);
-                        clientX = e.touches[0].clientX;
-                        clientY = e.touches[0].clientY;
-                    } else {
-                        setIsTouch(false);
-                        clientX = e.clientX;
-                        clientY = e.clientY;
-                    }
-                    
-                    cursorX.set(clientX);
-                    cursorY.set(clientY);
-
-                    // [性能核心] 仅在非触摸模式下生成粒子
-                    // 触摸模式下 setParticles 被完全短路，确保 React 不会在滑动时重绘
-                    if (!isTouch) {
-                        const now = Date.now();
-                        if (now - lastParticleTime.current > 40 && Math.random() > 0.7) {
-                            lastParticleTime.current = now;
-                            const id = idCounter++;
-                            const newParticle = { id, x: clientX, y: clientY, color: Math.random() > 0.5 ? '#64d2ff' : '#ff7eb3' };
-                            setParticles(prev => [...prev.slice(-10), newParticle]); 
-                            setTimeout(() => setParticles(prev => prev.filter(p => p.id !== id)), 600);
-                        }
-                    }
-                };
-
-                const handleMouseDown = () => setIsClicking(true);
-                const handleMouseUp = () => setIsClicking(false);
-
-                window.addEventListener('mousemove', moveCursor);
-                window.addEventListener('touchmove', moveCursor, { passive: true }); 
-                window.addEventListener('touchstart', handleTouchStart, { passive: true });
-                window.addEventListener('mousedown', handleMouseDown);
-                window.addEventListener('mouseup', handleMouseUp);
-                window.addEventListener('touchend', handleMouseUp);
+                // 绑定事件
+                window.addEventListener('mousemove', onMouseMove);
+                window.addEventListener('touchmove', onTouchMove, { passive: true }); 
+                window.addEventListener('touchstart', onTouchStart, { passive: true });
+                window.addEventListener('mousedown', onMouseDown);
+                window.addEventListener('mouseup', onMouseUp);
+                window.addEventListener('touchend', onTouchEnd);
 
                 return () => {
-                    window.removeEventListener('mousemove', moveCursor);
-                    window.removeEventListener('touchmove', moveCursor);
-                    window.removeEventListener('touchstart', handleTouchStart);
-                    window.removeEventListener('mousedown', handleMouseDown);
-                    window.removeEventListener('mouseup', handleMouseUp);
-                    window.removeEventListener('touchend', handleMouseUp);
-                }
-            }, [isTouch]); // 依赖 isTouch 以便正确切换逻辑
+                    window.removeEventListener('mousemove', onMouseMove);
+                    window.removeEventListener('touchmove', onTouchMove);
+                    window.removeEventListener('touchstart', onTouchStart);
+                    window.removeEventListener('mousedown', onMouseDown);
+                    window.removeEventListener('mouseup', onMouseUp);
+                    window.removeEventListener('touchend', onTouchEnd);
+                };
+            }, []);
 
-            const shouldHide = hidden || isIdle;
+            // 最终显示判断：外部 hidden 属性 或 (是触摸设备 且 闲置了)
+            const shouldHide = hidden || (isTouch && isIdle);
 
             return React.createElement(AnimatePresence, null,
                 !shouldHide && React.createElement(motion.div, {
@@ -274,7 +295,7 @@
                     transition: { duration: 0.2 },
                     className: "pointer-events-none z-[9999] fixed inset-0 overflow-hidden"
                 },
-                    // 粒子层 (Touch 模式下不生成新的，此数组自然为空，零渲染)
+                    // 粒子层 (只在 PC 模式下有内容，手机端 particles 数组为空)
                     particles.map(p => 
                         React.createElement(motion.div, {
                             key: p.id,
@@ -289,6 +310,7 @@
                     React.createElement(motion.div, {
                         className: "fixed top-0 left-0 pointer-events-none",
                         style: { 
+                            // 核心修复：触摸模式用原始坐标(无延迟)，鼠标模式用弹簧坐标(平滑)
                             x: isTouch ? cursorX : cursorXSpring, 
                             y: isTouch ? cursorY : cursorYSpring,
                         }
@@ -351,7 +373,6 @@
         };
 
         // 3. Glass Card
-        // [修改] 移除了 will-change-transform，防止列表卡片过多导致 iOS 显存压力过大
         const GlassCard = ({ children, className = "" }) => (
             React.createElement("div", { className: `bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl rounded-3xl ${className}` }, children)
         );
