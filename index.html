@@ -159,132 +159,100 @@
             )
         );
 
-        // 1. Custom Cursor with Particles - [极致优化版]
+        // 1. Custom Cursor - [PC/Mobile 混合优化版]
         const CustomCursor = ({ hidden }) => {
             const cursorX = useMotionValue(-100);
             const cursorY = useMotionValue(-100);
-            
-            // 鼠标模式：使用 Spring 物理效果，平滑
-            const springConfig = { damping: 20, stiffness: 400 }; 
-            const cursorXSpring = useSpring(cursorX, springConfig);
-            const cursorYSpring = useSpring(cursorY, springConfig);
 
-            const [particles, setParticles] = useState([]);
-            const [isClicking, setIsClicking] = useState(false);
-            
-            // 状态区分：是否为触摸设备
+            // PC 物理效果 (经典平滑)
+            const springConfigPC = { damping: 20, stiffness: 400 };
+            const pcX = useSpring(cursorX, springConfigPC);
+            const pcY = useSpring(cursorY, springConfigPC);
+
+            // 状态
             const [isTouch, setIsTouch] = useState(false);
-            const isTouchRef = useRef(false); // Ref 用于在事件循环中避免闭包问题
-
-            // 闲置检测逻辑
+            const [isClicking, setIsClicking] = useState(false);
+            const [particles, setParticles] = useState([]);
             const [isIdle, setIsIdle] = useState(false);
-            const lastInteractionTime = useRef(Date.now());
 
-            // 1. 闲置检测轮询 (仅针对触摸设备有效)
+            // Refs
+            const isTouchRef = useRef(false);
+            const idleTimerRef = useRef(null);
+            const lastParticleTime = useRef(0);
+
             useEffect(() => {
-                const checkIdle = () => {
-                    if (isTouchRef.current) {
-                        if (Date.now() - lastInteractionTime.current > 500) {
-                            setIsIdle(true);
-                        } else {
-                            setIsIdle(false);
-                        }
-                    } else {
-                        // PC 端永不闲置
-                        setIsIdle(false);
-                    }
-                };
-                const interval = setInterval(checkIdle, 100); 
-                return () => clearInterval(interval);
+                 let idCounter = 0;
+
+                 const onMouseMove = (e) => {
+                     if (isTouchRef.current) return; // 如果进入了触摸模式，忽略鼠标事件
+                     cursorX.set(e.clientX);
+                     cursorY.set(e.clientY);
+                     setIsIdle(false); // PC端永不闲置
+
+                     // PC 端粒子生成
+                     const now = Date.now();
+                     if (now - lastParticleTime.current > 40 && Math.random() > 0.7) {
+                         lastParticleTime.current = now;
+                         const id = idCounter++;
+                         setParticles(prev => [...prev.slice(-10), {
+                             id, x: e.clientX, y: e.clientY,
+                             color: Math.random() > 0.5 ? '#64d2ff' : '#ff7eb3'
+                         }]);
+                         setTimeout(() => setParticles(prev => prev.filter(p => p.id !== id)), 600);
+                     }
+                 };
+
+                 const onTouchMove = (e) => {
+                     isTouchRef.current = true;
+                     setIsTouch(true);
+                     setIsIdle(false);
+                     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+                     idleTimerRef.current = setTimeout(() => setIsIdle(true), 500);
+
+                     if (e.touches.length > 0) {
+                         cursorX.set(e.touches[0].clientX);
+                         cursorY.set(e.touches[0].clientY);
+                     }
+                 };
+
+                 const onTouchStart = (e) => {
+                     isTouchRef.current = true;
+                     setIsTouch(true);
+                     setIsClicking(true);
+                     setIsIdle(false);
+                     if (e.touches.length > 0) {
+                         cursorX.set(e.touches[0].clientX);
+                         cursorY.set(e.touches[0].clientY);
+                     }
+                 };
+
+                 const onMouseDown = () => setIsClicking(true);
+                 const onMouseUp = () => setIsClicking(false);
+                 const onTouchEnd = () => {
+                     setIsClicking(false);
+                     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+                     idleTimerRef.current = setTimeout(() => setIsIdle(true), 500);
+                 }
+
+                 // 绑定事件
+                 window.addEventListener('mousemove', onMouseMove);
+                 window.addEventListener('touchmove', onTouchMove, { passive: true });
+                 window.addEventListener('touchstart', onTouchStart, { passive: true });
+                 window.addEventListener('mousedown', onMouseDown);
+                 window.addEventListener('mouseup', onMouseUp);
+                 window.addEventListener('touchend', onTouchEnd);
+
+                 return () => {
+                     window.removeEventListener('mousemove', onMouseMove);
+                     window.removeEventListener('touchmove', onTouchMove);
+                     window.removeEventListener('touchstart', onTouchStart);
+                     window.removeEventListener('mousedown', onMouseDown);
+                     window.removeEventListener('mouseup', onMouseUp);
+                     window.removeEventListener('touchend', onTouchEnd);
+                     if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+                 }
             }, []);
 
-            // 2. 事件监听逻辑
-            useEffect(() => {
-                let idCounter = 0;
-                const lastParticleTime = { current: 0 };
-
-                // 鼠标移动处理 (PC)
-                const onMouseMove = (e) => {
-                    // 如果之前被标记为触摸设备，这里恢复为鼠标模式前做个检查
-                    // 但通常混合设备很难处理，这里优先信任 touchstart
-                    if (isTouchRef.current) return; 
-
-                    // 更新坐标
-                    cursorX.set(e.clientX);
-                    cursorY.set(e.clientY);
-                    lastInteractionTime.current = Date.now(); // 活跃时间
-
-                    // PC端生成粒子
-                    const now = Date.now();
-                    if (now - lastParticleTime.current > 40 && Math.random() > 0.7) {
-                        lastParticleTime.current = now;
-                        const id = idCounter++;
-                        const newParticle = {
-                            id,
-                            x: e.clientX,
-                            y: e.clientY,
-                            color: Math.random() > 0.5 ? '#64d2ff' : '#ff7eb3'
-                        };
-                        setParticles(prev => [...prev.slice(-10), newParticle]); 
-                        setTimeout(() => setParticles(prev => prev.filter(p => p.id !== id)), 600);
-                    }
-                };
-
-                // 触摸移动处理 (Mobile)
-                const onTouchMove = (e) => {
-                    // 只要触发了 touch，就锁定为触摸模式
-                    if (!isTouchRef.current) {
-                        isTouchRef.current = true;
-                        setIsTouch(true);
-                    }
-                    
-                    lastInteractionTime.current = Date.now(); // 活跃时间
-
-                    if (e.touches && e.touches.length > 0) {
-                        const touch = e.touches[0];
-                        cursorX.set(touch.clientX);
-                        cursorY.set(touch.clientY);
-                    }
-                    
-                    // 手机端完全禁用粒子生成，保证绝对流畅
-                };
-                
-                // 触摸开始：立即唤醒
-                const onTouchStart = (e) => {
-                    isTouchRef.current = true;
-                    setIsTouch(true);
-                    lastInteractionTime.current = Date.now();
-                    setIsClicking(true);
-                    
-                    if (e.touches && e.touches.length > 0) {
-                        cursorX.set(e.touches[0].clientX);
-                        cursorY.set(e.touches[0].clientY);
-                    }
-                };
-
-                const onMouseDown = () => setIsClicking(true);
-                const onMouseUp = () => setIsClicking(false);
-                const onTouchEnd = () => setIsClicking(false);
-
-                // 绑定事件
-                window.addEventListener('mousemove', onMouseMove);
-                window.addEventListener('touchmove', onTouchMove, { passive: true }); 
-                window.addEventListener('touchstart', onTouchStart, { passive: true });
-                window.addEventListener('mousedown', onMouseDown);
-                window.addEventListener('mouseup', onMouseUp);
-                window.addEventListener('touchend', onTouchEnd);
-
-                return () => {
-                    window.removeEventListener('mousemove', onMouseMove);
-                    window.removeEventListener('touchmove', onTouchMove);
-                    window.removeEventListener('touchstart', onTouchStart);
-                    window.removeEventListener('mousedown', onMouseDown);
-                    window.removeEventListener('mouseup', onMouseUp);
-                    window.removeEventListener('touchend', onTouchEnd);
-                };
-            }, []);
-
-            // 最终显示判断：外部 hidden 属性 或 (是触摸设备 且 闲置了)
             const shouldHide = hidden || (isTouch && isIdle);
 
             return React.createElement(AnimatePresence, null,
@@ -295,8 +263,8 @@
                     transition: { duration: 0.2 },
                     className: "pointer-events-none z-[9999] fixed inset-0 overflow-hidden"
                 },
-                    // 粒子层 (只在 PC 模式下有内容，手机端 particles 数组为空)
-                    particles.map(p => 
+                    // 粒子层 (仅在非触摸模式下渲染)
+                    !isTouch && particles.map(p => 
                         React.createElement(motion.div, {
                             key: p.id,
                             initial: { opacity: 0.8, scale: 1, x: p.x, y: p.y },
@@ -306,17 +274,18 @@
                             style: { backgroundColor: p.color }
                         })
                     ),
-                    // 原始跟随圆圈
+                    // 光标圆圈
                     React.createElement(motion.div, {
-                        className: "fixed top-0 left-0 pointer-events-none",
+                        className: "fixed top-0 left-0 pointer-events-none will-change-transform",
                         style: { 
-                            // 核心修复：触摸模式用原始坐标(无延迟)，鼠标模式用弹簧坐标(平滑)
-                            x: isTouch ? cursorX : cursorXSpring, 
-                            y: isTouch ? cursorY : cursorYSpring,
+                            // [关键逻辑] 如果是触摸模式，使用原始坐标(无延迟)；如果是鼠标，使用弹簧坐标(平滑)
+                            x: isTouch ? cursorX : pcX, 
+                            y: isTouch ? cursorY : pcY,
                         }
                     },
                         React.createElement("div", { className: "-translate-x-1/2 -translate-y-1/2" },
                             React.createElement(motion.div, {
+                                // 恢复 PC 端的经典視覺效果
                                 animate: { 
                                     scale: isClicking ? 2.5 : 1, 
                                     backgroundColor: isClicking ? "rgba(255, 255, 255, 0)" : "rgba(255, 255, 255, 0.05)",
@@ -326,6 +295,7 @@
                                 transition: { type: "spring", stiffness: 400, damping: 25 },
                                 className: "w-12 h-12 rounded-full border-2 shadow-[0_0_15px_rgba(100,210,255,0.5)] flex items-center justify-center overflow-hidden"
                             },
+                                // 内部装饰
                                 React.createElement(motion.div, { 
                                     animate: { opacity: isClicking ? 0 : 1 },
                                     className: "absolute top-1 left-2 w-4 h-2 bg-white/60 rounded-full rotate-[-45deg] blur-[1px]" 
