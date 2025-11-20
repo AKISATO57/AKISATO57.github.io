@@ -821,18 +821,18 @@
             // [修改] 布局改为 Flex + justify-center 以实现完美居中对齐
             React.createElement(motion.div, { 
                 className: "flex flex-wrap justify-center gap-6",
-                initial: "hidden",
-                whileInView: "visible",
+                initial: "hidden"，
+                whileInView: "visible"，
                 // [修改] 反复触发
-                viewport: { once: false, amount: 0.2, margin: "-50px" },
+                viewport: { once: false， amount: 0.2， margin: "-50px" }，
                 variants: {
-                    hidden: { opacity: 0 },
+                    hidden: { opacity: 0 }，
                     visible: {
-                        opacity: 1,
+                        opacity: 1，
                         transition: { staggerChildren: 0.1 } // 子元素依次延迟 0.1s 出现
                     }
                 }
-            },
+            }，
                 // 卡片宽度设置：
                 // 移动端 w-full (100%)
                 // 平板端 w-[calc(50%-12px)] (一行2个，减去gap的一半)
@@ -840,9 +840,9 @@
                 // 这样配合 flex justify-center 可以让最后一行不满时自动居中
                 
                 // 1. Spotify
-                React.createElement(SocialCard, { 
-                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
-                    icon: Music, title: "Spotify", subtitle: "我的歌单", color: "bg-green-500", href: CONFIG.spotifyProfile 
+                React。createElement(SocialCard， { 
+                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]"，
+                    icon: Music， title: "Spotify"， subtitle: "我的歌单"， color: "bg-green-500"， href: CONFIG.spotifyProfile 
                 }),
                 
                 // 2. Bangumi
@@ -865,21 +865,21 @@
                 }),
 
                 // 5. Linux.do
-                React.createElement(SocialCard, { 
-                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
-                    icon: Terminal, title: "Linux.do", subtitle: "摸鱼技术社区", color: "bg-violet-600", href: "https://linux.do/u/akisato/summary" 
+                React。createElement(SocialCard， { 
+                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]"，
+                    icon: Terminal， title: "Linux.do"， subtitle: "摸鱼技术社区", color: "bg-violet-600", href: "https://linux.do/u/akisato/summary" 
                 }),
 
                 // 6. Twitter
                 React.createElement(SocialCard, { 
                     className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
                     icon: Twitter, title: "Twitter", subtitle: "啥都没有！", color: "bg-blue-400", href: "https://twitter.com" 
-                }),
+                })，
 
                 // 7. GitHub
                 React.createElement(SocialCard, { 
                     className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
-                    icon: Github, title: "GitHub", subtitle: "@DannyGuo57", color: "bg-gray-800", href: "https://github.com/DannyGuo57" 
+                    icon: Github, title: "GitHub"， subtitle: "@AKISATO"， color: "bg-gray-800"， href: "https://github.com/AKISATO57" 
                 })
             )
         ),
@@ -887,21 +887,21 @@
         // Footer
         React.createElement("footer", { id: "contact", className: "relative bg-white pt-20 pb-10 px-6 overflow-hidden" },
             React.createElement("div", { className: "max-w-4xl mx-auto text-center relative z-10" },
-                React.createElement("h2", { className: "text-3xl font-bold text-gray-900 mb-6" }, "联系我"),
-                React.createElement("p", { className: "text-gray-500 mb-10" }, "无论是技术交流，还是番剧推荐，随时欢迎联系。", React.createElement("br"), "1326674097@qq.com"),
+                React.createElement("h2"， { className: "text-3xl font-bold text-gray-900 mb-6" }, "联系我"),
+                React。createElement("p", { className: "text-gray-500 mb-10" }， "无论是技术交流，还是番剧推荐，随时欢迎联系。"， React。createElement("br"), "1326674097@qq.com"),
                 
                 // Mail and QQ Icons Row
                 React.createElement("div", { className: "flex justify-center gap-6 mb-8" },
                     // Mail
                     React.createElement(motion.a, {
                         href: "mailto:1326674097@qq.com",
-                        className: "p-4 bg-blue-50 rounded-full text-blue-600 hover:bg-blue-100 transition-colors",
+                        className: "p-4 bg-blue-50 rounded-full text-blue-600 hover:bg-blue-100 transition-colors"，
                         whileHover: { scale: 1.1, rotate: 10 }
                     }, React.createElement(Mail, { className: "w-8 h-8" })),
 
                     // QQ
-                    React.createElement(motion.a, {
-                        href: "https://qm.qq.com/q/4U3sSjGOSQ",
+                    React。createElement(motion。a, {
+                        href: "https://qm.qq.com/q/4U3sSjGOSQ"，
                         target: "_blank", 
                         rel: "noopener noreferrer",
                         className: "p-4 bg-sky-50 rounded-full text-sky-500 hover:bg-sky-100 transition-colors",
@@ -929,4 +929,5 @@ const root = createRoot(document.getElementById('root'));
 root.render(React.createElement(App));
     </script>
 </body>
+
 </html>
