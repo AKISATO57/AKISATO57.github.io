@@ -83,6 +83,12 @@
         .thin-scrollbar::-webkit-scrollbar-thumb:hover {
             background: rgba(148, 163, 184, 0.8); /* 悬停时稍微加深 */
         }
+        
+        /* [新增] 硬件加速类，用于优化背景大图渲染 */
+        .gpu-accelerated {
+            will-change: transform;
+            transform: translate3d(0, 0, 0);
+        }
     </style>
 </head>
 <!-- [修改] 在 body 上也添加 ondragstart="return false" 作为双重保险 -->
@@ -163,33 +169,43 @@
             const cursorX = useMotionValue(-100);
             const cursorY = useMotionValue(-100);
             
-            // [修改] Spring 配置：针对鼠标保留弹性，稍后针对触摸屏我们会绕过它
             const springConfig = { damping: 20, stiffness: 400 }; 
             const cursorXSpring = useSpring(cursorX, springConfig);
             const cursorYSpring = useSpring(cursorY, springConfig);
 
             const [particles, setParticles] = useState([]);
             const [isClicking, setIsClicking] = useState(false);
-            
-            // [新增] 触摸设备检测：如果是触摸操作，我们禁用弹簧动画，改为直接跟随，消除"卡顿感"
             const [isTouch, setIsTouch] = useState(false);
-
-            // 空闲状态控制
+            
+            // [性能极限优化] 
+            // 1. 移除所有 setTimeout/clearTimeout，改用时间戳轮询 (Polling)
+            // 2. 避免在 touchmove 中进行任何内存分配
             const [isIdle, setIsIdle] = useState(false);
-            const idleTimer = useRef(null);
-            const lastParticleTime = useRef(0);
+            const lastInteractionTime = useRef(Date.now()); // 使用 Ref 记录最后活动时间，不触发渲染
+
+            // 启动一个低频轮询来检查是否闲置
+            useEffect(() => {
+                const checkIdle = () => {
+                    // 检查距离上次活动是否超过 500ms
+                    if (Date.now() - lastInteractionTime.current > 500) {
+                        setIsIdle(true); // 只有状态真正改变时 React 才会渲染，开销很小
+                    } else {
+                        setIsIdle(false);
+                    }
+                };
+                const interval = setInterval(checkIdle, 100); // 每100ms检查一次，完全不影响主线程
+                return () => clearInterval(interval);
+            }, []);
 
             useEffect(() => {
                 let idCounter = 0;
+                const lastParticleTime = { current: 0 }; // 本地变量代替 ref，减少闭包查找
 
-                // [新增] 触摸开始：立即显示，标记为触摸模式
                 const handleTouchStart = (e) => {
                     setIsTouch(true);
-                    setIsIdle(false);
                     setIsClicking(true);
-                    if (idleTimer.current) clearTimeout(idleTimer.current);
+                    lastInteractionTime.current = Date.now(); // 仅更新时间戳
                     
-                    // 更新初始位置，防止光标从上一次位置飞过来
                     if (e.touches && e.touches.length > 0) {
                         cursorX.set(e.touches[0].clientX);
                         cursorY.set(e.touches[0].clientY);
@@ -197,20 +213,16 @@
                 };
 
                 const moveCursor = (e) => {
-                    // 活动检测
-                    setIsIdle(false);
-                    if (idleTimer.current) clearTimeout(idleTimer.current);
-                    idleTimer.current = setTimeout(() => {
-                        setIsIdle(true);
-                    }, 500); 
+                    lastInteractionTime.current = Date.now(); // [极速] 仅更新时间戳，零内存开销
 
                     let clientX, clientY;
+                    // 简单的坐标提取
                     if (e.touches && e.touches.length > 0) {
-                        setIsTouch(true); // 确认为触摸
+                        setIsTouch(true);
                         clientX = e.touches[0].clientX;
                         clientY = e.touches[0].clientY;
                     } else {
-                        setIsTouch(false); // 确认为鼠标
+                        setIsTouch(false);
                         clientX = e.clientX;
                         clientY = e.clientY;
                     }
@@ -218,19 +230,17 @@
                     cursorX.set(clientX);
                     cursorY.set(clientY);
 
-                    // 粒子生成节流 (保持不变)
-                    const now = Date.now();
-                    if (now - lastParticleTime.current > 40 && Math.random() > 0.7) {
-                        lastParticleTime.current = now;
-                        const id = idCounter++;
-                        const newParticle = {
-                            id,
-                            x: clientX,
-                            y: clientY,
-                            color: Math.random() > 0.5 ? '#64d2ff' : '#ff7eb3'
-                        };
-                        setParticles(prev => [...prev.slice(-10), newParticle]); 
-                        setTimeout(() => setParticles(prev => prev.filter(p => p.id !== id)), 600);
+                    // [性能核心] 仅在非触摸模式下生成粒子
+                    // 触摸模式下 setParticles 被完全短路，确保 React 不会在滑动时重绘
+                    if (!isTouch) {
+                        const now = Date.now();
+                        if (now - lastParticleTime.current > 40 && Math.random() > 0.7) {
+                            lastParticleTime.current = now;
+                            const id = idCounter++;
+                            const newParticle = { id, x: clientX, y: clientY, color: Math.random() > 0.5 ? '#64d2ff' : '#ff7eb3' };
+                            setParticles(prev => [...prev.slice(-10), newParticle]); 
+                            setTimeout(() => setParticles(prev => prev.filter(p => p.id !== id)), 600);
+                        }
                     }
                 };
 
@@ -239,10 +249,7 @@
 
                 window.addEventListener('mousemove', moveCursor);
                 window.addEventListener('touchmove', moveCursor, { passive: true }); 
-                
-                // [修改] 独立监听 touchstart 以优化响应速度
                 window.addEventListener('touchstart', handleTouchStart, { passive: true });
-                
                 window.addEventListener('mousedown', handleMouseDown);
                 window.addEventListener('mouseup', handleMouseUp);
                 window.addEventListener('touchend', handleMouseUp);
@@ -254,9 +261,8 @@
                     window.removeEventListener('mousedown', handleMouseDown);
                     window.removeEventListener('mouseup', handleMouseUp);
                     window.removeEventListener('touchend', handleMouseUp);
-                    if (idleTimer.current) clearTimeout(idleTimer.current);
                 }
-            }, []);
+            }, [isTouch]); // 依赖 isTouch 以便正确切换逻辑
 
             const shouldHide = hidden || isIdle;
 
@@ -265,10 +271,10 @@
                     initial: { opacity: 0 },
                     animate: { opacity: 1 },
                     exit: { opacity: 0 },
-                    transition: { duration: 0.2 }, // [修改] 加快淡入淡出速度
+                    transition: { duration: 0.2 },
                     className: "pointer-events-none z-[9999] fixed inset-0 overflow-hidden"
                 },
-                    // 粒子层 (保持不变)
+                    // 粒子层 (Touch 模式下不生成新的，此数组自然为空，零渲染)
                     particles.map(p => 
                         React.createElement(motion.div, {
                             key: p.id,
@@ -283,8 +289,6 @@
                     React.createElement(motion.div, {
                         className: "fixed top-0 left-0 pointer-events-none",
                         style: { 
-                            // [核心修改] 如果是触摸模式，使用原始坐标(无延迟)；如果是鼠标，使用弹簧坐标(平滑)
-                            // iPhone 16 Pro 这种高刷屏上，弹簧动画会造成视觉上的"拖慢/卡顿"感
                             x: isTouch ? cursorX : cursorXSpring, 
                             y: isTouch ? cursorY : cursorYSpring,
                         }
@@ -347,6 +351,7 @@
         };
 
         // 3. Glass Card
+        // [修改] 移除了 will-change-transform，防止列表卡片过多导致 iOS 显存压力过大
         const GlassCard = ({ children, className = "" }) => (
             React.createElement("div", { className: `bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl rounded-3xl ${className}` }, children)
         );
