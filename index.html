@@ -70,7 +70,7 @@
         import { createRoot } from 'react-dom/client';
         import { motion, useScroll, useTransform, useSpring, useMotionValue, AnimatePresence } from 'framer-motion';
         // 引入所需图标
-        import { ArrowRight, ExternalLink, Mail, Github, Twitter, Tv, Disc, Star, MessageCircle, BrainCircuit, CheckCircle2, PlayCircle, History, Gamepad2, X, Music, Cloud, Bot, Terminal, BookOpen } from 'lucide-react';
+        import { ArrowRight, ExternalLink, Mail, Github, Twitter, Tv, Disc, 星标, MessageCircle, BrainCircuit, CheckCircle2, PlayCircle, History, Gamepad2, X, Music, Cloud, Bot, Terminal, BookOpen } from 'lucide-react';
 
         // --- 配置部分 ---
         const CONFIG = {
@@ -759,7 +759,7 @@
                             React.createElement("h2", { className: "text-4xl font-bold text-gray-900" }, "与其内卷", React.createElement("br"), "不如躺平看番"),
                             
                             React.createElement("p", { className: "text-gray-600 leading-relaxed text-lg" },
-                                "欢迎来到我的个人空间！其实我不是什么技术大佬，建这个网站纯粹是一时兴起——毕竟，拥有一片完全属于自己的互联网小天地，感觉真的很棒，对吧？平日里最大的爱好就是打打游戏、追追新番。为了方便自己，顺手折腾了一些实用工具（比如下面的 Alist 和 AI 助手）。这里没有复杂的代码哲学，只有我喜欢的动漫、音乐和游戏记录。随意逛逛吧，希望能让你感到放松。"
+                                "欢迎来到我的个人空间！其实我不是什么技术大佬，建这个网站纯粹是一时兴起——毕竟，拥有一片完全属于自己的互联网小天地，感觉真的很棒，对吧？平日里最大的爱好就是打打游戏、追追新番。为了方便自己，顺手折腾了一些实用工具（比如下面的 Alist 和 AI 助手）（因为是用的ddns域名+端口号所以暂不开放仅供个人和朋友使用）。这里没有复杂的代码哲学，只有我喜欢的动漫、音乐和游戏记录。随意逛逛吧，希望能让你感到放松。"
                             ),
                             
                             // [恢复] Alist 和 WebUI 在这里
@@ -777,7 +777,7 @@
                                         "Alist", 
                                         React.createElement(ExternalLink, { className: "w-3 h-3 opacity-50" })
                                     ),
-                                    React.createElement("p", { className: "text-sm text-blue-700" }, "我的云端U盘")
+                                    React.createElement("p", { className: "text-sm text-blue-700" }, "我的云端U盘（不可用）")
                                 ),
                                 // Link 2: Open WebUI
                                 React.createElement(motion.a, { 
@@ -792,7 +792,7 @@
                                         "Open WebUI",
                                         React.createElement(ExternalLink, { className: "w-3 h-3 opacity-50" })
                                     ),
-                                    React.createElement("p", { className: "text-sm text-pink-700" }, "AI 聊天助手")
+                                    React.createElement("p", { className: "text-sm text-pink-700" }, "AI 聊天助手（不可用）")
                                 )
                             )
                         )
@@ -929,4 +929,5 @@ const root = createRoot(document.getElementById('root'));
 root.render(React.createElement(App));
     </script>
 </body>
+
 </html>
