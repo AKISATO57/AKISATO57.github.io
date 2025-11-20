@@ -62,7 +62,3 @@ const CONFIG \= {
 * **Performance**: 觸摸模式下完全禁用粒子生成，釋放 JS 線程和繪製壓力。  
 * **Hardware Acceleration**: 關鍵動畫元素添加了 will-change: transform。  
 * **Custom Scrollbar**: 為移動端導航欄定制了 3px 極細滾動條，提升美觀度。
-
-## **📄 授權 (License)**
-
-MIT License. 歡迎隨意修改和用於個人主頁。
