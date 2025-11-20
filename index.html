@@ -59,14 +59,39 @@
         .shadow-text-gradient {
             filter: drop-shadow(0 2px 4px rgba(96, 165, 250, 0.2)); /* 使用淡蓝色阴影代替黑色 */
         }
+
+        /* [新增] 全局禁止拖拽图片和链接，防止浏览器默认的半透明预览图出现 */
+        img, a {
+            -webkit-user-drag: none;
+            user-drag: none;
+            -webkit-user-select: none; /* 顺便防止被选中 */
+            user-select: none;
+        }
+
+        /* [新增] 针对导航栏的超细滚动条样式 */
+        .thin-scrollbar::-webkit-scrollbar {
+            height: 3px; /* 水平滚动条的高度，设为 3px 极细 */
+            width: 3px;  /* 垂直滚动条的宽度 */
+        }
+        .thin-scrollbar::-webkit-scrollbar-track {
+            background: transparent; /* 轨道透明 */
+        }
+        .thin-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(203, 213, 225, 0.5); /* 使用半透明的淡灰色 */
+            border-radius: 10px; /* 圆角 */
+        }
+        .thin-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.8); /* 悬停时稍微加深 */
+        }
     </style>
 </head>
-<body class="bg-gray-50 text-slate-800 overflow-x-hidden selection:bg-pink-200 selection:text-pink-900">
+<!-- [修改] 在 body 上也添加 ondragstart="return false" 作为双重保险 -->
+<body class="bg-gray-50 text-slate-800 overflow-x-hidden selection:bg-pink-200 selection:text-pink-900" ondragstart="return false;">
     <div id="root"></div>
 
     <!-- React 应用逻辑 -->
     <script type="module">
-        import React, { useState, useEffect } from 'react';
+        import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
         import { motion, useScroll, useTransform, useSpring, useMotionValue, AnimatePresence } from 'framer-motion';
         // 引入所需图标
@@ -142,46 +167,87 @@
             const cursorYSpring = useSpring(cursorY, springConfig);
             const [particles, setParticles] = useState([]);
             const [isClicking, setIsClicking] = useState(false);
+            
+            // [新增] 空闲状态控制：默认不闲置，动起来后开启倒计时
+            const [isIdle, setIsIdle] = useState(false);
+            const idleTimer = useRef(null);
 
             useEffect(() => {
                 let idCounter = 0;
                 const moveCursor = (e) => {
-                cursorX.set(e.clientX);
-                cursorY.set(e.clientY);
+                    // [新增] 活动检测：每次移动重置空闲状态和计时器
+                    setIsIdle(false);
+                    if (idleTimer.current) clearTimeout(idleTimer.current);
+                    idleTimer.current = setTimeout(() => {
+                        setIsIdle(true);
+                    }, 500); // [修改] 改为 0.5 秒 (500ms) 无操作后隐藏光标
 
-                // 简单的粒子生成逻辑 (节流)
-                if (Math.random() > 0.7) {
-                    const id = idCounter++;
-                    const newParticle = {
-                    id,
-                    x: e.clientX,
-                    y: e.clientY,
-                    color: Math.random() > 0.5 ? '#64d2ff' : '#ff7eb3' // 蓝色或粉色粒子
-                    };
-                    setParticles(prev => [...prev.slice(-20), newParticle]); // 限制最大粒子数
+                    // [修改] 兼容触摸屏和鼠标的坐标获取
+                    let clientX, clientY;
+                    if (e.touches && e.touches.length > 0) {
+                        clientX = e.touches[0].clientX;
+                        clientY = e.touches[0].clientY;
+                    } else {
+                        clientX = e.clientX;
+                        clientY = e.clientY;
+                    }
                     
-                    // 自动清理
-                    setTimeout(() => {
-                    setParticles(prev => prev.filter(p => p.id !== id));
-                    }, 600);
-                }
+                    cursorX.set(clientX);
+                    cursorY.set(clientY);
+
+                    // 简单的粒子生成逻辑 (节流)
+                    if (Math.random() > 0.7) {
+                        const id = idCounter++;
+                        const newParticle = {
+                            id,
+                            x: clientX,
+                            y: clientY,
+                            color: Math.random() > 0.5 ? '#64d2ff' : '#ff7eb3' // 蓝色或粉色粒子
+                        };
+                        setParticles(prev => [...prev.slice(-20), newParticle]); // 限制最大粒子数
+                        
+                        // 自动清理
+                        setTimeout(() => {
+                        setParticles(prev => prev.filter(p => p.id !== id));
+                        }, 600);
+                    }
                 };
 
                 const handleMouseDown = () => setIsClicking(true);
                 const handleMouseUp = () => setIsClicking(false);
 
+                // [修改] 添加 touchmove 和 touchstart 监听，确保移动端也能滑动跟随
                 window.addEventListener('mousemove', moveCursor);
+                window.addEventListener('touchmove', moveCursor, { passive: true }); 
+                window.addEventListener('touchstart', moveCursor, { passive: true });
+                
                 window.addEventListener('mousedown', handleMouseDown);
+                window.addEventListener('touchstart', handleMouseDown, { passive: true }); // 触摸开始也算点击
+                
                 window.addEventListener('mouseup', handleMouseUp);
+                window.addEventListener('touchend', handleMouseUp);
+
                 return () => {
                     window.removeEventListener('mousemove', moveCursor);
+                    window.removeEventListener('touchmove', moveCursor);
+                    window.removeEventListener('touchstart', moveCursor);
+                    
                     window.removeEventListener('mousedown', handleMouseDown);
+                    window.removeEventListener('touchstart', handleMouseDown);
+                    
                     window.removeEventListener('mouseup', handleMouseUp);
+                    window.removeEventListener('touchend', handleMouseUp);
+                    
+                    // [新增] 清理计时器
+                    if (idleTimer.current) clearTimeout(idleTimer.current);
                 }
             }, []);
 
+            // [修改] 综合判断是否隐藏：外部 hidden 属性 或者 内部 idle 状态
+            const shouldHide = hidden || isIdle;
+
             return React.createElement(AnimatePresence, null,
-                !hidden && React.createElement(motion.div, {
+                !shouldHide && React.createElement(motion.div, {
                     initial: { opacity: 0 },
                     animate: { opacity: 1 },
                     exit: { opacity: 0 },
@@ -255,10 +321,13 @@
                 style: { y, opacity, x },
                 className: `absolute bottom-0 ${side === 'right' ? '-right-10 md:right-10' : '-left-10 md:left-10'} w-64 md:w-96 z-0 pointer-events-none hidden lg:block origin-bottom-right`
             }, 
+                // [修改] 防止拖拽，添加 select-none, draggable=false, onDragStart
                 React.createElement("img", { 
                     src: src, 
                     alt: "Anime Character", 
-                    className: "w-full h-auto drop-shadow-2xl",
+                    className: "w-full h-auto drop-shadow-2xl select-none",
+                    draggable: "false",
+                    onDragStart: (e) => e.preventDefault(),
                     onError: (e) => e.target.style.display = 'none' // 如果图片加载失败则隐藏
                 })
             );
@@ -357,23 +426,32 @@
                 fetchData();
             }, [collectionType, isWatching]);
 
-            // Animation Variants
-            const containerVariants = {
-                hidden: { opacity: 0 },
-                visible: {
-                    opacity: 1,
-                    transition: { staggerChildren: 0.1 }
-                }
-            };
-
+            // [修改] 移除 containerVariants，不再由父容器统一控制 stagger
+            
             const itemVariants = {
-                hidden: { y: 20, opacity: 0, scale: 0.9 },
+                hidden: { 
+                    y: 50, 
+                    opacity: 0, 
+                    scale: 0.9 
+                },
                 visible: { 
                     y: 0, 
                     opacity: 1, 
                     scale: 1,
-                    transition: { type: "spring", stiffness: 100 }
+                    transition: { type: "spring", stiffness: 100, damping: 12 }
+                },
+                // hover 状态
+                hover: { 
+                    y: -10, 
+                    scale: 1.02, 
+                    transition: { type: "spring", stiffness: 400, damping: 10 } 
                 }
+            };
+            
+            const imageVariants = {
+                hidden: { scale: 1 }, 
+                visible: { scale: 1, transition: { duration: 0.4 } },
+                hover: { scale: 1.1, transition: { duration: 0.4 } }
             };
 
             if (loading) {
@@ -382,20 +460,29 @@
                 );
             }
 
-            return React.createElement(motion.div, {
-                variants: containerVariants,
-                initial: "hidden",
-                whileInView: "visible",
-                // [修改] once: false 实现反复触发，amount: 0.2 表示元素进入 20% 时触发
-                viewport: { once: false, amount: 0.2, margin: "-50px" },
+            // [修改] 父容器不再负责动画触发，改为普通的 div
+            return React.createElement("div", {
                 className: "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
             },
-                // Stats Card
-                React.createElement(motion.div, { variants: itemVariants, className: "col-span-2 md:col-span-3 lg:col-span-1 h-80 lg:h-auto lg:aspect-[2/3]" },
+                // Stats Card - [修改] 独立添加视口检测
+                React.createElement(motion.div, { 
+                    variants: itemVariants, 
+                    initial: "hidden",        // 初始状态：隐藏
+                    whileInView: "visible",   // 进入视口：显示
+                    viewport: { once: false, amount: 0.3 }, // once: false 保证离开回来重复播放，amount: 0.3 保证露出30%才触发
+                    className: "col-span-2 md:col-span-3 lg:col-span-1 h-80 lg:h-auto lg:aspect-[2/3]" 
+                },
                     React.createElement(GlassCard, { className: "p-6 flex flex-col justify-between bg-gradient-to-br from-pink-50 to-white h-full" },
                         React.createElement("div", null,
                             React.createElement("div", { className: "flex items-center gap-3 mb-4" },
-                                React.createElement("img", { src: CONFIG.avatar, alt: "Avatar", className: "w-12 h-12 rounded-full border-2 border-pink-200 object-cover" }),
+                                // [修改] 防止拖拽，添加 select-none, draggable=false, onDragStart
+                                React.createElement("img", { 
+                                    src: CONFIG.avatar, 
+                                    alt: "Avatar", 
+                                    className: "w-12 h-12 rounded-full border-2 border-pink-200 object-cover select-none",
+                                    draggable: "false",
+                                    onDragStart: (e) => e.preventDefault()
+                                }),
                                 React.createElement("div", null,
                                     React.createElement("p", { className: "font-bold text-gray-800" }, "Bangumi"),
                                     React.createElement("p", { className: "text-xs text-gray-500" }, isWatching ? '正在追番' : '历史记录')
@@ -414,19 +501,29 @@
                         }, "访问我的BGM主页查看更多")
                     )
                 ),
-                // Anime Cards
+                // Anime Cards - [修改] 给每一个卡片独立添加视口检测
                 animes.map((anime) => (
-                    // [修改] 将 motion.div 改为 motion.a 以实现跳转链接
                     React.createElement(motion.a, {
                         key: anime.id,
-                        href: `https://bgm.tv/subject/${anime.id}`, // 跳转到对应的 bangumi 详情页
+                        href: `https://bgm.tv/subject/${anime.id}`,
                         target: "_blank",
                         rel: "noopener noreferrer",
                         variants: itemVariants,
-                        whileHover: { y: -10, scale: 1.02 },
-                        className: "group relative w-full aspect-[2/3] rounded-3xl overflow-hidden cursor-pointer shadow-md hover:shadow-2xl transition-all duration-300 block" // 添加 block 确保布局正确
+                        initial: "hidden",        // 初始状态：隐藏
+                        whileInView: "visible",   // 进入视口：显示
+                        viewport: { once: false, amount: 0.3 }, // 确保每个卡片独立触发，滚到了才播
+                        whileHover: "hover", 
+                        whileTap: "hover",
+                        className: "relative w-full aspect-[2/3] rounded-3xl overflow-hidden cursor-pointer shadow-md block"
                     },
-                        React.createElement("img", { src: anime.img, alt: anime.name, className: "absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" }),
+                        // [注意] 这里是 Bangumi 海报，您要求排除在修改之外，所以不添加 draggable=false
+                        React.createElement(motion.img, { 
+                            variants: imageVariants,
+                            src: anime.img, 
+                            alt: anime.name, 
+                            className: "absolute inset-0 w-full h-full object-cover" 
+                        }),
+                        
                         React.createElement("div", { className: "absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-transparent opacity-80" }),
                         
                         // Score Badge
@@ -437,7 +534,6 @@
                                 )
                             ) : (
                                 React.createElement(React.Fragment, null,
-                                    // [修改] 将 BrainCircuit 换成 Star，并添加 fill-current 保持一致
                                     React.createElement(Star, { className: "w-3 h-3 fill-current" }), " 思考中"
                                 )
                             )
@@ -599,7 +695,11 @@
             // Combine conditions for hiding cursor
             const shouldHideCursor = isGameOpen || isIframeHovered;
 
-            return React.createElement("div", { className: "bg-gray-50 min-h-screen font-sans text-slate-800 overflow-x-hidden selection:bg-blue-200 selection:text-blue-900" },
+            return React.createElement("div", { 
+                className: "bg-gray-50 min-h-screen font-sans text-slate-800 overflow-x-hidden selection:bg-blue-200 selection:text-blue-900",
+                // [新增] 在最外层容器拦截 onDragStart，彻底防止整个页面的“幽灵拖拽”
+                onDragStart: (e) => e.preventDefault()
+            },
                 React.createElement(CustomCursor, { hidden: shouldHideCursor }),
                 React.createElement(GameModal, { isOpen: isGameOpen, onClose: () => setIsGameOpen(false) }),
                 
@@ -616,13 +716,21 @@
                         React.createElement("div", { className: "flex-shrink-0" },
                             React.createElement("div", { className: "w-10 h-10 rounded-full overflow-hidden border border-gray-200 shadow-sm cursor-pointer hover:scale-105 transition-transform" },
                                 React.createElement("a", { href: "#home" },
-                                    React.createElement("img", { src: CONFIG.avatar, alt: "Logo", className: "w-full h-full object-cover" })
+                                    // [修改] 防止拖拽，添加 select-none, draggable=false, onDragStart
+                                    React.createElement("img", { 
+                                        src: CONFIG.avatar, 
+                                        alt: "Logo", 
+                                        className: "w-full h-full object-cover select-none",
+                                        draggable: "false",
+                                        onDragStart: (e) => e.preventDefault()
+                                    })
                                 )
                             )
                         ),
 
                         // Center: Navigation Links
-                        React.createElement("div", { className: "flex items-center gap-4 md:gap-8 overflow-x-auto no-scrollbar px-2" },
+                        // [修改] 将 no-scrollbar 替换为 thin-scrollbar，让滚动条变得更细更精致
+                        React.createElement("div", { className: "flex items-center gap-4 md:gap-8 overflow-x-auto thin-scrollbar px-2 pb-1" },
                             React.createElement("a", { href: "#home", className: "font-bold text-gray-800 hover:text-blue-500 transition-colors whitespace-nowrap" }, "Home"),
                             React.createElement("a", { href: "#bangumi", className: "font-medium text-gray-600 hover:text-pink-500 transition-colors whitespace-nowrap" }, "Bangumi"),
                             React.createElement("a", { href: "#music", className: "font-medium text-gray-600 hover:text-green-500 transition-colors whitespace-nowrap" }, "Music"),
@@ -667,67 +775,83 @@
                             }),
                             // 头像容器
                             React.createElement("div", { className: "relative p-1.5 rounded-full bg-white/80 backdrop-blur-sm shadow-xl" },
-                                React.createElement("img", { src: CONFIG.avatar, alt: "Avatar", className: "w-36 h-36 rounded-full object-cover border border-gray-100" })
+                                // [修改] 防止拖拽，添加 select-none, draggable=false, onDragStart
+                                React.createElement("img", { 
+                                    src: CONFIG.avatar, 
+                                    alt: "Avatar", 
+                                    className: "w-36 h-36 rounded-full object-cover border border-gray-100 select-none", 
+                                    draggable: "false", 
+                                    onDragStart: (e) => e.preventDefault() 
+                                })
                             )
                         ),
 
                         // [修改] 标题部分：拆分文字以实现独立交互，添加深阴影
                         React.createElement(motion.div, {
-                             className: "text-5xl md:text-7xl font-black tracking-tight mb-6 cursor-default"
+                             className: "text-5xl md:text-7xl font-black tracking-tight mb-6 cursor-default select-none", 
+                             onDragStart: (e) => e.preventDefault() 
                         },
                             // "Welcome" - Interactive
                             React.createElement(motion.span, {
-                                className: "inline-block text-slate-800 mr-3 shadow-text-solid", // 使用实心文字阴影
+                                className: "inline-block text-slate-800 mr-3 shadow-text-solid select-none", // [修改] 确保这里也有 select-none
                                 whileHover: { y: -5, color: "#475569" },
-                                whileTap: { scale: 0.9, color: "#ff7eb3" }, // 点击变粉色
-                                transition: { type: "spring", stiffness: 300 }
+                                whileTap: { scale: 0.9, color: "#ff7eb3" }, 
+                                transition: { type: "spring", stiffness: 300 },
+                                onDragStart: (e) => e.preventDefault() // [新增] 强制禁止拖拽
                             }, "Welcome"),
 
                             // [修改] "AKISATO" - 添加 motion 和交互，使用渐变阴影
                             React.createElement(motion.span, {
-                                className: "text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 inline-block shadow-text-gradient",
+                                className: "text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 inline-block shadow-text-gradient select-none", // [修改] 确保这里也有 select-none
                                 whileHover: { scale: 1.05 },
-                                whileTap: { scale: 0.95, rotate: 3 }, // 点击微旋转
-                                transition: { type: "spring", stiffness: 300 }
+                                whileTap: { scale: 0.95, rotate: 3 }, 
+                                transition: { type: "spring", stiffness: 300 },
+                                onDragStart: (e) => e.preventDefault() // [新增] 强制禁止拖拽
                             }, "AKISATO"),
                             
                             React.createElement("br"),
                             
                             // "の" - Interactive
                             React.createElement(motion.span, {
-                                className: "inline-block text-slate-800 mr-3 shadow-text-solid", // 使用实心文字阴影
+                                className: "inline-block text-slate-800 mr-3 shadow-text-solid select-none", // [修改] 确保这里也有 select-none
                                 whileHover: { y: -5, rotate: 10, color: "#475569" },
-                                whileTap: { scale: 1.2, rotate: -20, color: "#64d2ff" }, // 点击变蓝色并旋转
-                                transition: { type: "spring", stiffness: 300 }
+                                whileTap: { scale: 1.2, rotate: -20, color: "#64d2ff" }, 
+                                transition: { type: "spring", stiffness: 300 },
+                                onDragStart: (e) => e.preventDefault() // [新增] 强制禁止拖拽
                             }, "の"),
                             
                             // [修改] "世界" - 添加 motion 和交互，使用渐变阴影
-                            React.createElement(motion.span, {
-                                className: "text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400 inline-block shadow-text-gradient",
-                                whileHover: { scale: 1.05 },
-                                whileTap: { scale: 0.95, rotate: -3 }, // 点击微旋转
-                                transition: { type: "spring", stiffness: 300 }
-                            }, "世界.")
-                        ),
+                        React.createElement(motion.span, {
+                            className: "text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400 inline-block shadow-text-gradient select-none", 
+                            whileHover: { scale: 1.05 },
+                            whileTap: { scale: 0.95, rotate: -3 }, 
+                            transition: { type: "spring", stiffness: 300 },
+                            onDragStart: (e) => e.preventDefault() 
+                        }, "世界.")
+                    ),
 
-                        // [修改] 描述文字：也加上极轻微的阴影增加可读性
-                        React.createElement(motion.p, {
-                            className: "text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed mb-10 font-medium",
-                            style: { textShadow: "0 1px 2px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.05)" }, // 增加一点白色高光让文字更“凸”
-                            initial: { y: 20, opacity: 0 },
-                            animate: { y: 0, opacity: 1 },
-                            transition: { delay: 0.4 }
-                        },
-                            "喜欢瞎折腾的看番糕手，这里是我的个人空间 和我各网站的中转站捏",
-                            React.createElement("br", { className: "hidden md:block" }),
-                        ),
-                        React.createElement(motion.div, {
-                            className: "flex justify-center gap-4",
-                            initial: { y: 20, opacity: 0 },
-                            animate: { y: 0, opacity: 1 },
-                            transition: { delay: 0.6 }
-                        },
-                            React.createElement("a", {
+                    // [修改] 描述文字：改为允许选择 (select-text) 并显示文本光标 (cursor-text)
+                    React.createElement(motion.p, {
+                        // 1. 将 select-none 改为 select-text
+                        // 2. 添加 cursor-text 提示用户可选择
+                        // 3. 移除了 onDragStart={(e) => e.preventDefault()}，避免过度限制
+                        className: "text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed mb-10 font-medium select-text cursor-text",
+                        style: { textShadow: "0 1px 2px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.05)" }, 
+                        initial: { y: 20, opacity: 0 },
+                        animate: { y: 0, opacity: 1 },
+                        transition: { delay: 0.4 },
+                        // 注意：这里移除了之前的 onDragStart 拦截，允许浏览器处理文本选择交互
+                    },
+                        "喜欢瞎折腾的看番糕手，这里是我的个人空间 和我各网站的中转站捏",
+                        React.createElement("br", { className: "hidden md:block" }),
+                    ),
+                    React.createElement(motion.div, {
+                        className: "flex justify-center gap-4",
+                        initial: { y: 20, opacity: 0 },
+                        animate: { y: 0, opacity: 1 },
+                        transition: { delay: 0.6 }
+                    },
+                        React.createElement("a", {
                                 href: "#about",
                                 className: "px-8 py-3 rounded-full bg-slate-900 text-white font-medium hover:bg-slate-800 transition-all shadow-lg hover:shadow-blue-500/25 flex items-center gap-2 group"
                             }, "随便看看 ", React.createElement(ArrowRight, { className: "w-4 h-4 group-hover:translate-x-1 transition-transform" }))
@@ -745,7 +869,14 @@
                             // [修改] 反复触发
                             viewport: { once: false, amount: 0.3 }
                         },
-                            React.createElement("img", { src: CONFIG.featuredImg, alt: "Featured", className: "rounded-[3rem] shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500 w-full max-w-md mx-auto border-8 border-white object-cover" })
+                            // [修改] 给这里的 featuredImg 图片也添加防拖曳属性
+                            React.createElement("img", { 
+                                src: CONFIG.featuredImg, 
+                                alt: "Featured", 
+                                className: "rounded-[3rem] shadow-2xl rotate-3 hover:rotate-0 transition-transform duration-500 w-full max-w-md mx-auto border-8 border-white object-cover select-none",
+                                draggable: "false",
+                                onDragStart: (e) => e.preventDefault()
+                            })
                         ),
                         React.createElement(motion.div, {
                             initial: { opacity: 0, x: 50 },
@@ -803,7 +934,14 @@
                 React.createElement("section", { id: "bangumi", className: "relative bg-slate-50/50" },
                     React.createElement(BangumiSection),
                     React.createElement("div", { className: "absolute top-20 -left-20 w-64 opacity-20 pointer-events-none rotate-12 hidden lg:block" },
-                        React.createElement("img", { src: CONFIG.charaLeft, alt: "Decor" })
+                        // [修改] 防止拖拽，添加 select-none, draggable=false, onDragStart
+                        React.createElement("img", { 
+                            src: CONFIG.charaLeft, 
+                            alt: "Decor",
+                            className: "select-none",
+                            draggable: "false",
+                            onDragStart: (e) => e.preventDefault()
+                        })
                     )
                 ),
 
@@ -918,7 +1056,14 @@
             ),
             // 右下角装饰
             React.createElement("div", { className: "absolute bottom-0 right-0 opacity-10 w-96 pointer-events-none grayscale" },
-                React.createElement("img", { src: CONFIG.charaLeft, alt: "Footer Decor" })
+                // [修改] 防止拖拽，添加 select-none, draggable=false, onDragStart
+                React.createElement("img", { 
+                    src: CONFIG.charaLeft, 
+                    alt: "Footer Decor",
+                    className: "select-none",
+                    draggable: "false",
+                    onDragStart: (e) => e.preventDefault()
+                })
             )
         )
     );
