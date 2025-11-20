@@ -162,32 +162,55 @@
         const CustomCursor = ({ hidden }) => {
             const cursorX = useMotionValue(-100);
             const cursorY = useMotionValue(-100);
+            
+            // [修改] Spring 配置：针对鼠标保留弹性，稍后针对触摸屏我们会绕过它
             const springConfig = { damping: 20, stiffness: 400 }; 
             const cursorXSpring = useSpring(cursorX, springConfig);
             const cursorYSpring = useSpring(cursorY, springConfig);
+
             const [particles, setParticles] = useState([]);
             const [isClicking, setIsClicking] = useState(false);
             
-            // [新增] 空闲状态控制：默认不闲置，动起来后开启倒计时
+            // [新增] 触摸设备检测：如果是触摸操作，我们禁用弹簧动画，改为直接跟随，消除"卡顿感"
+            const [isTouch, setIsTouch] = useState(false);
+
+            // 空闲状态控制
             const [isIdle, setIsIdle] = useState(false);
             const idleTimer = useRef(null);
+            const lastParticleTime = useRef(0);
 
             useEffect(() => {
                 let idCounter = 0;
+
+                // [新增] 触摸开始：立即显示，标记为触摸模式
+                const handleTouchStart = (e) => {
+                    setIsTouch(true);
+                    setIsIdle(false);
+                    setIsClicking(true);
+                    if (idleTimer.current) clearTimeout(idleTimer.current);
+                    
+                    // 更新初始位置，防止光标从上一次位置飞过来
+                    if (e.touches && e.touches.length > 0) {
+                        cursorX.set(e.touches[0].clientX);
+                        cursorY.set(e.touches[0].clientY);
+                    }
+                };
+
                 const moveCursor = (e) => {
-                    // [新增] 活动检测：每次移动重置空闲状态和计时器
+                    // 活动检测
                     setIsIdle(false);
                     if (idleTimer.current) clearTimeout(idleTimer.current);
                     idleTimer.current = setTimeout(() => {
                         setIsIdle(true);
-                    }, 500); // [修改] 改为 0.5 秒 (500ms) 无操作后隐藏光标
+                    }, 500); 
 
-                    // [修改] 兼容触摸屏和鼠标的坐标获取
                     let clientX, clientY;
                     if (e.touches && e.touches.length > 0) {
+                        setIsTouch(true); // 确认为触摸
                         clientX = e.touches[0].clientX;
                         clientY = e.touches[0].clientY;
                     } else {
+                        setIsTouch(false); // 确认为鼠标
                         clientX = e.clientX;
                         clientY = e.clientY;
                     }
@@ -195,55 +218,46 @@
                     cursorX.set(clientX);
                     cursorY.set(clientY);
 
-                    // 简单的粒子生成逻辑 (节流)
-                    if (Math.random() > 0.7) {
+                    // 粒子生成节流 (保持不变)
+                    const now = Date.now();
+                    if (now - lastParticleTime.current > 40 && Math.random() > 0.7) {
+                        lastParticleTime.current = now;
                         const id = idCounter++;
                         const newParticle = {
                             id,
                             x: clientX,
                             y: clientY,
-                            color: Math.random() > 0.5 ? '#64d2ff' : '#ff7eb3' // 蓝色或粉色粒子
+                            color: Math.random() > 0.5 ? '#64d2ff' : '#ff7eb3'
                         };
-                        setParticles(prev => [...prev.slice(-20), newParticle]); // 限制最大粒子数
-                        
-                        // 自动清理
-                        setTimeout(() => {
-                        setParticles(prev => prev.filter(p => p.id !== id));
-                        }, 600);
+                        setParticles(prev => [...prev.slice(-10), newParticle]); 
+                        setTimeout(() => setParticles(prev => prev.filter(p => p.id !== id)), 600);
                     }
                 };
 
                 const handleMouseDown = () => setIsClicking(true);
                 const handleMouseUp = () => setIsClicking(false);
 
-                // [修改] 添加 touchmove 和 touchstart 监听，确保移动端也能滑动跟随
                 window.addEventListener('mousemove', moveCursor);
                 window.addEventListener('touchmove', moveCursor, { passive: true }); 
-                window.addEventListener('touchstart', moveCursor, { passive: true });
+                
+                // [修改] 独立监听 touchstart 以优化响应速度
+                window.addEventListener('touchstart', handleTouchStart, { passive: true });
                 
                 window.addEventListener('mousedown', handleMouseDown);
-                window.addEventListener('touchstart', handleMouseDown, { passive: true }); // 触摸开始也算点击
-                
                 window.addEventListener('mouseup', handleMouseUp);
                 window.addEventListener('touchend', handleMouseUp);
 
                 return () => {
                     window.removeEventListener('mousemove', moveCursor);
                     window.removeEventListener('touchmove', moveCursor);
-                    window.removeEventListener('touchstart', moveCursor);
-                    
+                    window.removeEventListener('touchstart', handleTouchStart);
                     window.removeEventListener('mousedown', handleMouseDown);
-                    window.removeEventListener('touchstart', handleMouseDown);
-                    
                     window.removeEventListener('mouseup', handleMouseUp);
                     window.removeEventListener('touchend', handleMouseUp);
-                    
-                    // [新增] 清理计时器
                     if (idleTimer.current) clearTimeout(idleTimer.current);
                 }
             }, []);
 
-            // [修改] 综合判断是否隐藏：外部 hidden 属性 或者 内部 idle 状态
             const shouldHide = hidden || isIdle;
 
             return React.createElement(AnimatePresence, null,
@@ -251,10 +265,10 @@
                     initial: { opacity: 0 },
                     animate: { opacity: 1 },
                     exit: { opacity: 0 },
-                    transition: { duration: 0.3 },
+                    transition: { duration: 0.2 }, // [修改] 加快淡入淡出速度
                     className: "pointer-events-none z-[9999] fixed inset-0 overflow-hidden"
                 },
-                    // 粒子层
+                    // 粒子层 (保持不变)
                     particles.map(p => 
                         React.createElement(motion.div, {
                             key: p.id,
@@ -269,24 +283,23 @@
                     React.createElement(motion.div, {
                         className: "fixed top-0 left-0 pointer-events-none",
                         style: { 
-                            x: cursorXSpring, 
-                            y: cursorYSpring,
+                            // [核心修改] 如果是触摸模式，使用原始坐标(无延迟)；如果是鼠标，使用弹簧坐标(平滑)
+                            // iPhone 16 Pro 这种高刷屏上，弹簧动画会造成视觉上的"拖慢/卡顿"感
+                            x: isTouch ? cursorX : cursorXSpring, 
+                            y: isTouch ? cursorY : cursorYSpring,
                         }
                     },
                         React.createElement("div", { className: "-translate-x-1/2 -translate-y-1/2" },
                             React.createElement(motion.div, {
                                 animate: { 
-                                    // [修改] 点击时放大 2.5 倍，背景变全透明，模糊消失，边框变淡
                                     scale: isClicking ? 2.5 : 1, 
                                     backgroundColor: isClicking ? "rgba(255, 255, 255, 0)" : "rgba(255, 255, 255, 0.05)",
                                     backdropFilter: isClicking ? "blur(0px)" : "blur(4px)", 
                                     borderColor: isClicking ? "rgba(100, 210, 255, 0.3)" : "rgba(96, 165, 250, 0.8)"
                                 },
                                 transition: { type: "spring", stiffness: 400, damping: 25 },
-                                // [修改] 去除固定的 backdrop-blur 类，改用 animate 控制
                                 className: "w-12 h-12 rounded-full border-2 shadow-[0_0_15px_rgba(100,210,255,0.5)] flex items-center justify-center overflow-hidden"
                             },
-                                // [新增] 点击时隐藏内部装饰，保持视野纯净
                                 React.createElement(motion.div, { 
                                     animate: { opacity: isClicking ? 0 : 1 },
                                     className: "absolute top-1 left-2 w-4 h-2 bg-white/60 rounded-full rotate-[-45deg] blur-[1px]" 
