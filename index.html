@@ -14,7 +14,17 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        sans: ['Inter', 'sans-serif'],
+                        // [修改] 优化字体栈：优先使用系统默认的高质量无衬线字体，确保中日文在移动端显示足够饱满
+                        sans: [
+                            'Inter', 
+                            'PingFang SC',      // iOS 中文
+                            'Hiragino Sans GB', // macOS 中文
+                            'Microsoft YaHei',  // Windows 中文
+                            'Noto Sans JP',     // Android/Google 日文
+                            'sans-serif', 
+                            'Apple Color Emoji', 
+                            'Segoe UI Emoji'
+                        ],
                     },
                     colors: {
                         anime: {
@@ -826,8 +836,9 @@
                                 }, "AKISATO"),
                                 
                                 // "の" - 连接词
+                                // [修复] 将 font-bold 修改为 font-black，使其在手机端更粗更明显
                                 React.createElement(motion.span, {
-                                    className: "text-4xl md:text-5xl font-bold text-slate-800 inline-block shadow-text-solid select-none mx-1", 
+                                    className: "text-4xl md:text-5xl font-black text-slate-800 inline-block shadow-text-solid select-none mx-1", 
                                     whileHover: { y: -5, rotate: 15, color: "#475569" },
                                     whileTap: { scale: 1.2, rotate: -20, color: "#64d2ff" }, 
                                     transition: { type: "spring", stiffness: 300 },
@@ -845,8 +856,9 @@
                             ),
 
                             // Line 2: "へようこそ" (欢迎语在下面)
+                            // [修复] 将 font-bold 修改为 font-black (或 font-extrabold)，增加视觉厚度
                             React.createElement(motion.span, {
-                                className: "text-4xl md:text-6xl font-bold text-slate-700 inline-block shadow-text-solid select-none tracking-widest mt-1",
+                                className: "text-4xl md:text-6xl font-black text-slate-700 inline-block shadow-text-solid select-none tracking-widest mt-1",
                                 whileHover: { y: -5, color: "#475569", scale: 1.05 }, 
                                 whileTap: { scale: 0.95, color: "#ff7eb3" }, 
                                 transition: { type: "spring", stiffness: 300 },
