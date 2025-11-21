@@ -14,17 +14,22 @@
             theme: {
                 extend: {
                     fontFamily: {
-                        // [修改] 优化字体栈：优先使用系统默认的高质量无衬线字体，确保中日文在移动端显示足够饱满
+                        // 默认字体栈（主要用于中文和英文）
                         sans: [
                             'Inter', 
-                            'PingFang SC',      // iOS 中文
-                            'Hiragino Sans GB', // macOS 中文
-                            'Microsoft YaHei',  // Windows 中文
-                            'Noto Sans JP',     // Android/Google 日文
-                            'sans-serif', 
-                            'Apple Color Emoji', 
-                            'Segoe UI Emoji'
+                            'PingFang SC',      
+                            'Hiragino Sans GB', 
+                            'Microsoft YaHei',  
+                            'sans-serif'
                         ],
+                        // [新增] 专用日文字体栈：强制优先使用 iOS/macOS 的冬青黑体 (Hiragino Sans)，它的粗体(W8/W9)非常饱满
+                        jp: [
+                            '"Hiragino Sans"',          // iOS 9+ / macOS 10.11+ (支持多字重)
+                            '"Hiragino Kaku Gothic ProN"', // 旧版 iOS/macOS
+                            '"Noto Sans JP"',           // Android / Windows (如果安装了)
+                            '"Yu Gothic"',              // Windows
+                            'sans-serif'
+                        ]
                     },
                     colors: {
                         anime: {
@@ -836,9 +841,10 @@
                                 }, "AKISATO"),
                                 
                                 // "の" - 连接词
-                                // [修复] 将 font-bold 修改为 font-black，使其在手机端更粗更明显
+                                // [修复] 应用专用日文字体 font-jp，强制使用 iOS Hiragino Sans
                                 React.createElement(motion.span, {
-                                    className: "text-4xl md:text-5xl font-black text-slate-800 inline-block shadow-text-solid select-none mx-1", 
+                                    lang: "ja", // 语义化标签
+                                    className: "text-4xl md:text-5xl font-black text-slate-800 inline-block shadow-text-solid select-none mx-1 font-jp", 
                                     whileHover: { y: -5, rotate: 15, color: "#475569" },
                                     whileTap: { scale: 1.2, rotate: -20, color: "#64d2ff" }, 
                                     transition: { type: "spring", stiffness: 300 },
@@ -846,8 +852,10 @@
                                 }, "の"),
 
                                 // "世界" - 大号渐变字
+                                // [修复] 虽然是汉字，但为了统一风格，也强制使用日文字体渲染
                                 React.createElement(motion.span, {
-                                    className: "text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400 inline-block shadow-text-gradient select-none", 
+                                    lang: "ja",
+                                    className: "text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400 inline-block shadow-text-gradient select-none font-jp", 
                                     whileHover: { scale: 1.05, rotate: 2 },
                                     whileTap: { scale: 0.95, rotate: -3 }, 
                                     transition: { type: "spring", stiffness: 300 },
@@ -856,9 +864,10 @@
                             ),
 
                             // Line 2: "へようこそ" (欢迎语在下面)
-                            // [修复] 将 font-bold 修改为 font-black (或 font-extrabold)，增加视觉厚度
+                            // [修复] 应用专用日文字体 font-jp
                             React.createElement(motion.span, {
-                                className: "text-4xl md:text-6xl font-black text-slate-700 inline-block shadow-text-solid select-none tracking-widest mt-1",
+                                lang: "ja",
+                                className: "text-4xl md:text-6xl font-black text-slate-700 inline-block shadow-text-solid select-none tracking-widest mt-1 font-jp",
                                 whileHover: { y: -5, color: "#475569", scale: 1.05 }, 
                                 whileTap: { scale: 0.95, color: "#ff7eb3" }, 
                                 transition: { type: "spring", stiffness: 300 },
