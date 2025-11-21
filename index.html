@@ -152,7 +152,7 @@
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
         import { motion, useScroll, useTransform, useSpring, useMotionValue, AnimatePresence } from 'framer-motion';
-        import { ArrowRight, ExternalLink, Mail, Github, Twitter, Tv, Disc, Star, MessageCircle, BrainCircuit, CheckCircle2, PlayCircle, History, Gamepad2, X, Music, Cloud, Bot, Terminal, BookOpen, Sun, Moon } from 'lucide-react';
+        import { ArrowRight, ExternalLink, Mail, Github, Twitter, Tv, Disc, Star, MessageCircle, BrainCircuit, CheckCircle2, PlayCircle, History, Gamepad2, X, Music, Cloud, Bot, Terminal, BookOpen, Sun, Moon, Volume2, Smartphone } from 'lucide-react';
 
         // --- 配置部分 ---
         const CONFIG = {
@@ -167,14 +167,50 @@
             spotifyProfile: 'https://open.spotify.com/user/1adxgwu2yp1uvvqh5yd60y99o', 
         };
 
+        // [配置] 导航链接配置
+        const NAV_LINKS = [
+            { 
+                id: 'home', 
+                label: 'Home', 
+                activeText: 'text-blue-500 dark:text-blue-400', 
+                activeBg: 'bg-blue-50 dark:bg-blue-900/30' 
+            },
+            { 
+                id: 'bangumi', 
+                label: 'Bangumi', 
+                activeText: 'text-pink-500 dark:text-pink-400', 
+                activeBg: 'bg-pink-50 dark:bg-pink-900/30' 
+            },
+            { 
+                id: 'music', 
+                label: 'Music', 
+                activeText: 'text-green-500 dark:text-green-400', 
+                activeBg: 'bg-green-50 dark:bg-green-900/30' 
+            },
+            { 
+                id: 'links', 
+                label: 'Links', 
+                activeText: 'text-indigo-500 dark:text-indigo-400', 
+                activeBg: 'bg-indigo-50 dark:bg-indigo-900/30' 
+            },
+            { 
+                id: 'contact', 
+                label: 'Contact', 
+                activeText: 'text-sky-500 dark:text-sky-400', 
+                activeBg: 'bg-sky-50 dark:bg-sky-900/30' 
+            }
+        ];
+
         // --- 组件定义 ---
-        // [修复] 补全 BangumiIcon 的所有路径
+        
+        // [修复] Bangumi Icon - 完整的 SVG 路径
         const BangumiIcon = (props) => (
             React.createElement("svg", { ...props, viewBox: "0 0 1024 1024", version: "1.1", xmlns: "http://www.w3.org/2000/svg", fill: "currentColor" },
                 React.createElement("path", { d: "M228.115268 615.399298a12.300795 12.300795 0 0 0 11.35458 7.569719 12.471113 12.471113 0 0 0 4.749999-0.965139l147.609537-61.882459a12.300795 12.300795 0 0 0 0.26494-22.557765l-147.609537-66.235049a12.300795 12.300795 0 1 0-10.067727 22.444219l121.740019 54.634453-121.456155 50.906366a12.300795 12.300795 0 0 0-6.585656 16.085655zM399.020617 627.965033H239.469848a12.300795 12.300795 0 0 0 0 24.601589h159.550769a12.300795 12.300795 0 0 0 0-24.601589zM399.020617 667.460046H239.469848a12.300795 12.300795 0 0 0 0 24.601589h159.550769a12.300795 12.300795 0 0 0 0-24.601589zM872.941851 476.892349l-133.283841 58.381464a12.300795 12.300795 0 0 0-0.397411 22.349598l133.302766 64.058754a12.073703 12.073703 0 0 0 5.317729 1.23008 12.300795 12.300795 0 0 0 5.336652-23.390435l-109.15536-52.42031L882.896033 499.469038a12.300795 12.300795 0 1 0-9.954182-22.576689zM877.881094 627.965033h-148.101569a12.300795 12.300795 0 0 0 0 24.601589h148.101569a12.300795 12.300795 0 0 0 0-24.601589zM877.881094 667.460046h-148.101569a12.300795 12.300795 0 0 0 0 24.601589h148.101569a12.300795 12.300795 0 0 0 0-24.601589zM644.866193 537.128395h-162.919295a12.28187 12.28187 0 0 0-10.711153 18.318722l81.374488 145.130453a12.300795 12.300795 0 0 0 21.460155 0l81.374489-145.130453a12.300795 12.300795 0 0 0-10.730078-18.318722z m-81.374488 132.299778l-60.444213-107.698189h120.888426z" }),
                 React.createElement("path", { d: "M891.411968 334.960102H648.405037c-6.812748-15.13944-19.813742-28.386449-36.864535-38.018917L803.092262 19.283861a12.300795 12.300795 0 0 0-20.249001-13.966133L588.566402 286.873457a147.723082 147.723082 0 0 0-45.418319-7.001991 151.507942 151.507942 0 0 0-31.887445 3.368526L239.980804 4.712151A12.300795 12.300795 0 0 0 222.437978 21.87649l262.726051 269.803739c-22.14143 9.821711-39.116527 25.112546-47.310749 43.242025H132.547555A91.763929 91.763929 0 0 0 40.764702 426.705107v414.44216A91.763929 91.763929 0 0 0 132.547555 932.967969h268.024855l-19.908363 46.989036c-12.641432 29.881469 22.614538 57.094612 48.294812 37.299794L538.473781 932.967969h352.938187a91.763929 91.763929 0 0 0 91.782853-91.782853v-414.442161a91.763929 91.763929 0 0 0-91.782853-91.782853z m34.839635 463.815658a60.709153 60.709153 0 0 1-60.709153 60.709153H585.670984L487.870204 932.967969l-77.002975 57.851583 24.412346-57.851583 31.016927-73.483056H198.082405A60.728077 60.728077 0 0 1 137.27863 798.737912V440.330602a60.728077 60.728077 0 0 1 60.728077-60.728077h667.460046a60.709153 60.709153 0 0 1 60.709153 60.728077z" })
             )
         );
+
         const SteamIcon = (props) => (
             React.createElement("svg", { ...props, viewBox: "0 0 1024 1024", version: "1.1", xmlns: "http://www.w3.org/2000/svg", fill: "currentColor" },
                 React.createElement("path", { d: "M895.51 350.26a415.67 415.67 0 0 0-782.86 49l59.73 24.59c39.23-151.32 176.93-263.35 340.3-263.35 193.82 0 351.5 157.68 351.5 351.5S706.5 863.5 512.68 863.5c-119.33 0-225-59.78-288.53-151l-96.22-43.43c0.63 1.55 1.27 3.08 1.91 4.62a415.6 415.6 0 0 0 765.67-323.43z" }),
@@ -530,13 +566,14 @@
             );
         };
 
-        // 6. Bangumi Section
+        // 6. Bangumi Section (Fix: Move tabs config out, ensure button type and z-index)
+        const BANGUMI_TABS = [
+            { id: 'watching', label: '在看', icon: PlayCircle, color: 'bg-pink-500', textColor: 'text-pink-500' },
+            { id: 'watched', label: '看过', icon: History, color: 'bg-blue-500', textColor: 'text-blue-500' }
+        ];
+
         const BangumiSection = () => {
             const [activeTab, setActiveTab] = useState('watching');
-            const tabs = [
-                { id: 'watching', label: '在看', icon: PlayCircle, color: 'bg-pink-500', textColor: 'text-pink-500' },
-                { id: 'watched', label: '看过', icon: History, color: 'bg-blue-500', textColor: 'text-blue-500' }
-            ];
 
             return React.createElement("div", { className: "w-full max-w-6xl mx-auto px-6 py-20 relative z-10" },
                 React.createElement("div", { className: "flex flex-col md:flex-row items-center justify-between mb-12 gap-6" },
@@ -545,12 +582,14 @@
                         React.createElement("h2", { className: "text-3xl font-bold text-gray-800 dark:text-white theme-transition" }, "Bangumi ", React.createElement("span", { className: "text-pink-500" }, "收藏"))
                     ),
                     React.createElement("div", { className: "bg-white dark:bg-slate-800 p-1.5 rounded-full shadow-sm border border-gray-100 dark:border-slate-700 flex relative theme-transition" },
-                        tabs.map((tab) => {
+                        BANGUMI_TABS.map((tab) => {
                             const isActive = activeTab === tab.id;
                             return React.createElement("button", {
                                 key: tab.id,
+                                type: "button", // [修复] 显式添加 button 类型
                                 onClick: () => setActiveTab(tab.id),
-                                className: `relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-300 flex items-center gap-2 ${isActive ? 'text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 theme-transition'}`
+                                // [修复] 增加 cursor-pointer 和 select-none，确保点击感应良好
+                                className: `relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-300 flex items-center gap-2 cursor-pointer select-none ${isActive ? 'text-white' : 'text-gray-500 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-200 theme-transition'}`
                             },
                                 isActive && React.createElement(motion.div, {
                                     layoutId: "activeTabBg",
@@ -578,9 +617,11 @@
             );
         };
 
-        // 7. Spotify Section
-        const SpotifySection = ({ setIsIframeHovered }) => (
-            React.createElement(motion.section, { 
+        // 7. Spotify Section (Removed Volume Hint UI)
+        const SpotifySection = ({ setIsIframeHovered }) => {
+            // [移除] 删除了 showVolumeTip 状态和相关按钮
+
+            return React.createElement(motion.section, { 
                 id: "music", 
                 className: "py-12 px-6 max-w-6xl mx-auto relative z-10",
                 initial: { opacity: 0, y: 50 },
@@ -588,12 +629,16 @@
                 viewport: { once: false, amount: 0.2 },
                 transition: { duration: 0.6 }
             },
-                React.createElement("div", { className: "flex items-center gap-3 mb-8" },
-                    React.createElement("div", { className: "w-2 h-8 bg-green-500 rounded-full" }),
-                    React.createElement("h2", { className: "text-3xl font-bold text-gray-800 dark:text-white theme-transition" }, 
-                        "My ", React.createElement("span", { className: "text-green-500" }, "Spotify")
+                // Header with Title only (Volume hint removed)
+                React.createElement("div", { className: "flex items-center justify-between mb-8" },
+                    React.createElement("div", { className: "flex items-center gap-3" },
+                        React.createElement("div", { className: "w-2 h-8 bg-green-500 rounded-full" }),
+                        React.createElement("h2", { className: "text-3xl font-bold text-gray-800 dark:text-white theme-transition" }, 
+                            "My ", React.createElement("span", { className: "text-green-500" }, "Spotify")
+                        )
                     )
                 ),
+                
                 React.createElement("div", { 
                     className: "w-full overflow-hidden rounded-[2rem] shadow-2xl border-4 border-white/50 dark:border-white/10 bg-black/5 dark:bg-black/20 backdrop-blur-sm theme-transition",
                     onMouseEnter: () => setIsIframeHovered(true),
@@ -612,8 +657,8 @@
                     })
                 ),
                 React.createElement("p", { className: "text-xs text-gray-400 dark:text-gray-500 mt-3 text-center tracking-wide theme-transition" }, "默认排序最下面是最新 此组件最多只显示99首")
-            )
-        );
+            );
+        };
 
         // 8. Game Modal
         const GameModal = ({ isOpen, onClose }) => {
@@ -653,6 +698,10 @@
             const [isGameOpen, setIsGameOpen] = useState(false);
             const [isIframeHovered, setIsIframeHovered] = useState(false);
             const [theme, setTheme] = useState('light');
+            // [新增] 用于追踪当前激活的区域
+            const [activeSection, setActiveSection] = useState('home');
+            // [新增] 滚动锁定 Ref，防止点击跳转时 scroll spy 干扰
+            const isManualScrolling = useRef(false);
 
             // [修改] 主题初始化逻辑
             useEffect(() => {
@@ -669,6 +718,69 @@
                     document.documentElement.classList.remove('dark');
                 }
             }, []);
+
+            // [修改] Scroll Spy 核心逻辑：解决冲突，实现平滑
+            useEffect(() => {
+                const handleScroll = () => {
+                    // 如果正在手动滚动（点击跳转），则不执行自动判定，防止“闪烁”
+                    if (isManualScrolling.current) return;
+
+                    // [核心修复] 判定线设为当前视口顶部 + 100px（导航栏高度附近）
+                    // 只有当元素真正滚到导航栏下面一点点时，才点亮
+                    const scrollPosition = window.scrollY + 100; 
+                    
+                    // 默认 Home
+                    let current = 'home'; 
+                    
+                    // 遍历判断
+                    for (const link of NAV_LINKS) {
+                        const element = document.getElementById(link.id);
+                        if (element) {
+                            // 如果元素的顶部 已经滚到了 判定线之上，说明我们看到了它（或已经过了它）
+                            if (element.offsetTop <= scrollPosition) {
+                                current = link.id;
+                            }
+                        }
+                    }
+                    
+                    // [保留] 触底判定：严格触底检测 (diff < 20px)
+                    if (Math.ceil(window.innerHeight + window.scrollY) >= document.documentElement.scrollHeight - 20) {
+                        current = 'contact';
+                    }
+                    
+                    setActiveSection(current);
+                };
+
+                window.addEventListener('scroll', handleScroll);
+                handleScroll(); // 初始化
+                return () => window.removeEventListener('scroll', handleScroll);
+            }, []);
+
+            // [新增] 点击导航处理函数：带平滑滚动 + 锁存状态
+            const handleNavClick = (e, id) => {
+                e.preventDefault(); // 阻止默认锚点跳转
+                
+                const element = document.getElementById(id);
+                if (element) {
+                    isManualScrolling.current = true; // 开启锁
+                    setActiveSection(id); // 立即更新 UI 为选中状态
+
+                    // 计算偏移量（减去导航栏高度，比如 80px）
+                    const navHeight = 80;
+                    const elementPosition = element.getBoundingClientRect().top + window.scrollY;
+                    const offsetPosition = elementPosition - navHeight;
+
+                    window.scrollTo({
+                        top: offsetPosition,
+                        behavior: "smooth"
+                    });
+
+                    // 滚动动画结束后（约 700ms），释放锁
+                    setTimeout(() => {
+                        isManualScrolling.current = false;
+                    }, 700);
+                }
+            };
 
             // [修改] 主题切换逻辑：引入 View Transitions API 实现扩散 + 模糊效果
             const toggleTheme = (e) => {
@@ -748,17 +860,34 @@
                     React.createElement(GlassCard, { className: "px-6 py-3 flex items-center justify-between gap-4 md:gap-6 !rounded-full !bg-white/80 dark:!bg-slate-900/80 w-full max-w-4xl theme-transition" },
                         React.createElement("div", { className: "flex-shrink-0" },
                             React.createElement("div", { className: "w-10 h-10 rounded-full overflow-hidden border border-gray-200 dark:border-slate-700 shadow-sm cursor-pointer hover:scale-105 transition-transform" },
-                                React.createElement("a", { href: "#home" },
+                                React.createElement("a", { href: "#home", onClick: (e) => handleNavClick(e, 'home') },
                                     React.createElement("img", { src: CONFIG.avatar, alt: "Logo", className: "w-full h-full object-cover select-none", draggable: "false", onDragStart: (e) => e.preventDefault() })
                                 )
                             )
                         ),
+                        // [核心修改] 导航菜单区域：使用 handleNavClick 接管点击，实现平滑滚动且不闪烁
                         React.createElement("div", { className: "flex items-center gap-4 md:gap-6 overflow-x-auto thin-scrollbar px-2 pb-1" },
-                            React.createElement("a", { href: "#home", className: "font-bold text-gray-800 dark:text-gray-200 hover:text-blue-500 dark:hover:text-blue-400 transition-colors whitespace-nowrap theme-transition" }, "Home"),
-                            React.createElement("a", { href: "#bangumi", className: "font-medium text-gray-600 dark:text-gray-400 hover:text-pink-500 dark:hover:text-pink-400 transition-colors whitespace-nowrap theme-transition" }, "Bangumi"),
-                            React.createElement("a", { href: "#music", className: "font-medium text-gray-600 dark:text-gray-400 hover:text-green-500 dark:hover:text-green-400 transition-colors whitespace-nowrap theme-transition" }, "Music"),
-                            React.createElement("a", { href: "#links", className: "font-medium text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors whitespace-nowrap theme-transition" }, "Links"),
-                            React.createElement("a", { href: "#contact", className: "font-medium text-gray-600 dark:text-gray-400 hover:text-blue-500 dark:hover:text-blue-400 transition-colors whitespace-nowrap theme-transition" }, "Contact")
+                            NAV_LINKS.map(link => {
+                                const isActive = activeSection === link.id;
+                                return React.createElement("a", {
+                                    key: link.id,
+                                    href: `#${link.id}`,
+                                    onClick: (e) => handleNavClick(e, link.id), // 使用自定义点击处理
+                                    className: `relative z-10 px-4 py-1.5 rounded-full text-sm font-bold transition-colors duration-300 whitespace-nowrap cursor-pointer select-none
+                                        ${isActive 
+                                            ? link.activeText // 选中：显示配置好的多彩颜色
+                                            : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200' // 未选中：灰色
+                                        }`
+                                }, 
+                                    // 动态背景胶囊
+                                    isActive && React.createElement(motion.div, {
+                                        layoutId: "navActiveBg",
+                                        className: `absolute inset-0 rounded-full -z-10 ${link.activeBg}`,
+                                        transition: { type: "spring", stiffness: 300, damping: 30 }
+                                    }),
+                                    link.label
+                                );
+                            })
                         ),
                         React.createElement("div", { className: "flex-shrink-0 flex items-center gap-2" },
                             React.createElement("button", {
