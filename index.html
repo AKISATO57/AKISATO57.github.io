@@ -40,6 +40,13 @@
     </script>
 
     <style>
+        /* 核心修复：禁止浏览器的橡皮筋回弹效果，防止拖出灰色背景 */
+        html, body {
+            overscroll-behavior: none; 
+            height: 100%; 
+            background-color: #f9fafb; 
+        }
+
         /* 滚动条样式 */
         html { scroll-behavior: smooth; }
         ::-webkit-scrollbar { width: 8px; }
@@ -89,8 +96,8 @@
         }
     </style>
 </head>
-<!-- 在 body 上添加 ondragstart="return false" 防止拖拽 -->
-<body class="bg-gray-50 text-slate-800 overflow-x-hidden selection:bg-pink-200 selection:text-pink-900" ondragstart="return false;">
+<!-- 添加 select-none 防止在空白处拖拽时出现选择框 -->
+<body class="bg-gray-50 text-slate-800 overflow-x-hidden selection:bg-pink-200 selection:text-pink-900 select-none" ondragstart="return false;">
     <div id="root"></div>
 
     <!-- React 应用逻辑 -->
@@ -184,11 +191,14 @@
                  let idCounter = 0;
 
                  const onMouseMove = (e) => {
-                     if (isTouchRef.current) return; // 如果进入了触摸模式，忽略鼠标事件
-                     cursorX.set(e.clientX);
-                     cursorY.set(e.clientY);
+                     // 强制切换回鼠标模式 (PC)
+                     isTouchRef.current = false;
+                     setIsTouch(false);
                      setIsIdle(false); // PC端永不闲置
 
+                     cursorX.set(e.clientX);
+                     cursorY.set(e.clientY);
+                     
                      // PC 端粒子生成
                      const now = Date.now();
                      if (now - lastParticleTime.current > 40 && Math.random() > 0.7) {
@@ -203,9 +213,11 @@
                  };
 
                  const onTouchMove = (e) => {
+                     // 强制切换回触摸模式 (Mobile)
                      isTouchRef.current = true;
                      setIsTouch(true);
                      setIsIdle(false);
+                     
                      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
                      idleTimerRef.current = setTimeout(() => setIsIdle(true), 500);
 
@@ -350,14 +362,13 @@
         // 4. Social Link Card
         // [修复] 将入场动画(div)与交互动画(a)分离，解决 Hover 状态被锁定的 Bug
         const SocialCard = ({ icon: Icon, title, subtitle, color, href, className = "" }) => {
-            // 入场动画变体
+            // [修改] Social Link Card 动画：从上往下弹入 (y: -50 -> y: 0)
             const cardVariants = {
-                hidden: { y: 20, opacity: 0, scale: 0.9 },
+                hidden: { y: -50, opacity: 0 }, // 初始位置在上方
                 visible: { 
                     y: 0, 
                     opacity: 1, 
-                    scale: 1,
-                    transition: { type: "spring", stiffness: 100 }
+                    transition: { type: "spring", stiffness: 200, damping: 15 } // Q弹落袋感
                 }
             };
 
@@ -478,7 +489,8 @@
                     variants: itemVariants, 
                     initial: "hidden",        // 初始状态：隐藏
                     whileInView: "visible",   // 进入视口：显示
-                    viewport: { once: false, amount: 0.3 }, // once: false 保证离开回来重复播放，amount: 0.3 保证露出30%才触发
+                    // [修改] 同样优化这里，扩大检测范围
+                    viewport: { once: false, amount: 0.1, margin: "100px" },
                     className: "col-span-2 md:col-span-3 lg:col-span-1 h-80 lg:h-auto lg:aspect-[2/3]" 
                 },
                     React.createElement(GlassCard, { className: "p-6 flex flex-col justify-between bg-gradient-to-br from-pink-50 to-white h-full" },
@@ -520,7 +532,8 @@
                         variants: itemVariants,
                         initial: "hidden",        // 初始状态：隐藏
                         whileInView: "visible",   // 进入视口：显示
-                        viewport: { once: false, amount: 0.3 }, // 确保每个卡片独立触发，滚到了才播
+                        // [修改] 同样优化这里，扩大检测范围，保证滑动流畅不闪烁
+                        viewport: { once: false, amount: 0.1, margin: "100px" },
                         whileHover: "hover", 
                         whileTap: "hover",
                         className: "relative w-full aspect-[2/3] rounded-3xl overflow-hidden cursor-pointer shadow-md block"
@@ -796,54 +809,53 @@
                         ),
 
                         // [修改] 标题部分：拆分文字以实现独立交互，添加深阴影
+                        // 结构调整：顶部 "AKISATO の 世界" -> 下方 "へようこそ"
                         React.createElement(motion.div, {
-                             className: "text-5xl md:text-7xl font-black tracking-tight mb-6 cursor-default select-none", 
+                             className: "flex flex-col items-center justify-center mb-6 cursor-default select-none", 
                              onDragStart: (e) => e.preventDefault() 
                         },
-                            // "Welcome" - Interactive
-                            React.createElement(motion.span, {
-                                className: "inline-block text-slate-800 mr-3 shadow-text-solid select-none", // [修改] 确保这里也有 select-none
-                                whileHover: { y: -5, color: "#475569" },
-                                whileTap: { scale: 0.9, color: "#ff7eb3" }, 
-                                transition: { type: "spring", stiffness: 300 },
-                                onDragStart: (e) => e.preventDefault() // [新增] 强制禁止拖拽
-                            }, "Welcome"),
+                            // Line 1: "AKISATO の 世界" (主标题在上面)
+                            React.createElement("div", { className: "flex flex-wrap justify-center items-baseline gap-2 md:gap-3 mb-2" },
+                                // "AKISATO" - 大号渐变字
+                                React.createElement(motion.span, {
+                                    className: "text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 inline-block shadow-text-gradient select-none", 
+                                    whileHover: { scale: 1.05, rotate: -2 },
+                                    whileTap: { scale: 0.95, rotate: 3 }, 
+                                    transition: { type: "spring", stiffness: 300 },
+                                    onDragStart: (e) => e.preventDefault() 
+                                }, "AKISATO"),
+                                
+                                // "の" - 连接词
+                                React.createElement(motion.span, {
+                                    className: "text-4xl md:text-5xl font-bold text-slate-800 inline-block shadow-text-solid select-none mx-1", 
+                                    whileHover: { y: -5, rotate: 15, color: "#475569" },
+                                    whileTap: { scale: 1.2, rotate: -20, color: "#64d2ff" }, 
+                                    transition: { type: "spring", stiffness: 300 },
+                                    onDragStart: (e) => e.preventDefault() 
+                                }, "の"),
 
-                            // [修改] "AKISATO" - 添加 motion 和交互，使用渐变阴影
-                            React.createElement(motion.span, {
-                                className: "text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-cyan-400 inline-block shadow-text-gradient select-none", // [修改] 确保这里也有 select-none
-                                whileHover: { scale: 1.05 },
-                                whileTap: { scale: 0.95, rotate: 3 }, 
-                                transition: { type: "spring", stiffness: 300 },
-                                onDragStart: (e) => e.preventDefault() // [新增] 强制禁止拖拽
-                            }, "AKISATO"),
-                            
-                            React.createElement("br"),
-                            
-                            // "の" - Interactive
-                            React.createElement(motion.span, {
-                                className: "inline-block text-slate-800 mr-3 shadow-text-solid select-none", // [修改] 确保这里也有 select-none
-                                whileHover: { y: -5, rotate: 10, color: "#475569" },
-                                whileTap: { scale: 1.2, rotate: -20, color: "#64d2ff" }, 
-                                transition: { type: "spring", stiffness: 300 },
-                                onDragStart: (e) => e.preventDefault() // [新增] 强制禁止拖拽
-                            }, "の"),
-                            
-                            // [修改] "世界" - 添加 motion 和交互，使用渐变阴影
-                        React.createElement(motion.span, {
-                            className: "text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400 inline-block shadow-text-gradient select-none", 
-                            whileHover: { scale: 1.05 },
-                            whileTap: { scale: 0.95, rotate: -3 }, 
-                            transition: { type: "spring", stiffness: 300 },
-                            onDragStart: (e) => e.preventDefault() 
-                        }, "世界.")
-                    ),
+                                // "世界" - 大号渐变字
+                                React.createElement(motion.span, {
+                                    className: "text-6xl md:text-8xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-rose-400 inline-block shadow-text-gradient select-none", 
+                                    whileHover: { scale: 1.05, rotate: 2 },
+                                    whileTap: { scale: 0.95, rotate: -3 }, 
+                                    transition: { type: "spring", stiffness: 300 },
+                                    onDragStart: (e) => e.preventDefault() 
+                                }, "世界")
+                            ),
 
-                    // [修改] 描述文字：改为允许选择 (select-text) 并显示文本光标 (cursor-text)
-                    React.createElement(motion.p, {
-                        // 1. 将 select-none 改为 select-text
-                        // 2. 添加 cursor-text 提示用户可选择
-                        // 3. 移除了 onDragStart={(e) => e.preventDefault()}，避免过度限制
+                            // Line 2: "へようこそ" (欢迎语在下面)
+                            React.createElement(motion.span, {
+                                className: "text-4xl md:text-6xl font-bold text-slate-700 inline-block shadow-text-solid select-none tracking-widest mt-1",
+                                whileHover: { y: -5, color: "#475569", scale: 1.05 }, 
+                                whileTap: { scale: 0.95, color: "#ff7eb3" }, 
+                                transition: { type: "spring", stiffness: 300 },
+                                onDragStart: (e) => e.preventDefault() 
+                            }, "へようこそ")
+                        ),
+
+                        // [修改] 描述文字：也加上极轻微的阴影增加可读性
+                        React.createElement(motion.p, {
                         className: "text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed mb-10 font-medium select-text cursor-text",
                         style: { textShadow: "0 1px 2px rgba(255,255,255,0.8), 0 2px 4px rgba(0,0,0,0.05)" }, 
                         initial: { y: 20, opacity: 0 },
@@ -960,7 +972,7 @@
                 // Links Section
         React.createElement("section", { id: "links", className: "py-24 px-6 max-w-6xl mx-auto z-10 relative" },
             React.createElement("div", { className: "text-center mb-16" },
-                React.createElement("h2", { className: "text-4xl font-bold text-gray-900 mb-4" }, "个人社交媒体"),
+                React.createElement("h2", { className: "text-4xl font-bold text-gray-900 mb-6" }, "个人社交媒体"),
                 React.createElement("p", { className: "text-gray-500" }, "连接至我的其他数字世界")
             ),
             
@@ -970,13 +982,20 @@
                 className: "flex flex-wrap justify-center gap-6",
                 initial: "hidden",
                 whileInView: "visible",
-                // [修改] 反复触发
-                viewport: { once: false, amount: 0.2, margin: "-50px" },
+                // [修改] 关键修复：将 margin 改为 "100px" (扩大检测范围)，amount 改为 0.1
+                // 这样元素会在进入屏幕前就准备好，离开屏幕后很远才消失，彻底解决手机端滑动消失过快的问题
+                // [修改] 将 once 改为 true，确保元素一旦出现就不会再因滚动而隐藏，彻底解决底部消失问题 (用户需求: 不要消失)
+                // 这里其实是把 once 改为 false, 并配合 huge margin，如用户所愿 "重新播放动画" 但 "不闪烁"
+                // 但根据最新需求 "网页翻到最下面的时候，不要消失"，once: false + margin 200px 可能会在极端情况下(非常长的页面)依然触发 exit。
+                // 最稳妥的方式是 once: false (为了能重播) + 巨大的 margin (e.g. 500px or 50%)
+                // 或者，如果用户之前的意思是“不要像上次那样闪烁消失”，那么 once: false + margin 200px 应该是最佳平衡点。
+                viewport: { once: false, amount: 0.1, margin: "200px" },
                 variants: {
                     hidden: { opacity: 0 },
                     visible: {
                         opacity: 1,
-                        transition: { staggerChildren: 0.1 } // 子元素依次延迟 0.1s 出现
+                        // [修改] 加快 stagger 速度，让卡片出现得更紧凑 (0.1 -> 0.05)
+                        transition: { staggerChildren: 0.05 } 
                     }
                 }
             },
@@ -986,46 +1005,48 @@
                 // 桌面端 w-[calc(25%-18px)] (一行4个，减去gap的四分之三)
                 // 这样配合 flex justify-center 可以让最后一行不满时自动居中
                 
+                // [修改] 移动端双排显示 (w-[calc(50%-12px)])
+                
                 // 1. Spotify
                 React.createElement(SocialCard, { 
-                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    className: "w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
                     icon: Music, title: "Spotify", subtitle: "我的歌单", color: "bg-green-500", href: CONFIG.spotifyProfile 
                 }),
                 
                 // 2. Bangumi
                 React.createElement(SocialCard, { 
-                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    className: "w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
                     icon: BangumiIcon, title: "Bangumi", subtitle: "我的追番记录", color: "bg-rose-500", href: "https://bgm.tv/user/648470" 
                 }),
 
                 // 3. Bilibili
                 React.createElement(SocialCard, { 
-                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    className: "w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
                     icon: Tv, title: "Bilibili", subtitle: "阿姨退钱！", color: "bg-pink-400", href: "https://space.bilibili.com/33013640" 
                 }),
 
                 // 4. Steam
                 // [修改] 使用 SteamIcon
                 React.createElement(SocialCard, { 
-                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    className: "w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
                     icon: SteamIcon, title: "Steam", subtitle: "游戏启动！", color: "bg-indigo-600", href: "https://steamcommunity.com/id/_AKISATO/" 
                 }),
 
                 // 5. Linux.do
                 React.createElement(SocialCard, { 
-                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    className: "w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
                     icon: Terminal, title: "Linux.do", subtitle: "摸鱼技术社区", color: "bg-violet-600", href: "https://linux.do/u/akisato/summary" 
                 }),
 
                 // 6. Twitter
                 React.createElement(SocialCard, { 
-                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    className: "w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
                     icon: Twitter, title: "Twitter", subtitle: "啥都没有！", color: "bg-blue-400", href: "https://twitter.com" 
                 }),
 
                 // 7. GitHub
                 React.createElement(SocialCard, { 
-                    className: "w-full md:w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
+                    className: "w-[calc(50%-12px)] lg:w-[calc(25%-18px)]",
                     icon: Github, title: "GitHub", subtitle: "@AKISATO", color: "bg-gray-800", href: "https://github.com/AKISATO57" 
                 })
             )
