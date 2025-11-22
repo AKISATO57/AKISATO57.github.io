@@ -36,7 +36,7 @@
 
 ## **📦 快速開始 (Getting Started)**
 
-訪問 https://akisato57.github.io 您可直接查看
+訪問 https://akihm.netlify.app/ 您可直接查看
 
 ## **⚙️ 配置 (Configuration)**
 
