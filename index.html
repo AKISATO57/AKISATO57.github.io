@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AKISATOの世界</title>
     
+    <!-- [新增] 默认 Favicon (先放一个方的，防止 JS 加载失败时没图标) -->
+    <link rel="icon" id="dynamic-favicon" href="https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8HRpHjs80LFuF_yfs2Avw8wPzD918gACRjcAAtPG8VTjbO0fkjB6CDYE.png">
+    
     <!-- 引入 Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -152,7 +155,7 @@
         import React, { useState, useEffect, useRef } from 'react';
         import { createRoot } from 'react-dom/client';
         import { motion, useScroll, useTransform, useSpring, useMotionValue, AnimatePresence } from 'framer-motion';
-        import { ArrowRight, ExternalLink, Mail, Github, Twitter, Tv, Disc, Star, MessageCircle, BrainCircuit, CheckCircle2, PlayCircle, History, Gamepad2, X, Music, Cloud, Bot, Terminal, BookOpen, Sun, Moon, Volume2, Smartphone } from 'lucide-react';
+        import { ArrowRight, ExternalLink, Mail, Github, Twitter, Tv, Disc, Star, MessageCircle, BrainCircuit, CheckCircle2, PlayCircle, History, Gamepad2, X, Music, Cloud, Bot, Terminal, BookOpen, Sun, Moon, Volume2, Smartphone, Compass } from 'lucide-react';
 
         // --- 配置部分 ---
         const CONFIG = {
@@ -703,6 +706,42 @@
             // [新增] 滚动锁定 Ref，防止点击跳转时 scroll spy 干扰
             const isManualScrolling = useRef(false);
 
+            // [新增] 动态生成圆形 Favicon
+            useEffect(() => {
+                const setCircularFavicon = () => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+                    const img = new Image();
+                    img.crossOrigin = "Anonymous"; // 尝试跨域加载
+                    img.src = CONFIG.avatar;
+                    
+                    img.onload = () => {
+                        const size = 64; // Favicon 标准大小
+                        canvas.width = size;
+                        canvas.height = size;
+                        
+                        // 画圆形裁剪路径
+                        ctx.beginPath();
+                        ctx.arc(size/2, size/2, size/2, 0, Math.PI * 2);
+                        ctx.closePath();
+                        ctx.clip();
+                        
+                        // 绘制图片
+                        ctx.drawImage(img, 0, 0, size, size);
+                        
+                        // 转换为 Data URL 并设置为 Favicon
+                        const dataUrl = canvas.toDataURL('image/png');
+                        const link = document.getElementById('dynamic-favicon') || document.createElement('link');
+                        link.id = 'dynamic-favicon';
+                        link.rel = 'icon';
+                        link.href = dataUrl;
+                        if (!document.getElementById('dynamic-favicon')) document.head.appendChild(link);
+                    };
+                };
+
+                setCircularFavicon();
+            }, []);
+
             // [修改] 主题初始化逻辑
             useEffect(() => {
                 const storedTheme = localStorage.getItem('theme');
@@ -1038,6 +1077,23 @@
                             ),
                             
                             React.createElement("div", { className: "grid grid-cols-2 gap-6 pt-4" },
+                                // [新增] AKISATO 导航站 (全宽居中)
+                                React.createElement(motion.a, {
+                                    href: "https://akisrch.netlify.app",
+                                    target: "_blank",
+                                    rel: "noopener noreferrer",
+                                    whileHover: { scale: 1.02 },
+                                    whileTap: { scale: 0.98 },
+                                    className: "col-span-2 p-4 rounded-2xl bg-purple-50 dark:bg-purple-900/20 cursor-pointer block group hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors theme-transition"
+                                },
+                                    React.createElement("h4", { className: "font-bold text-purple-900 dark:text-purple-100 mb-1 flex items-center justify-center gap-2 theme-transition" },
+                                        React.createElement(Compass, { className: "w-4 h-4" }),
+                                        "AKISATO 导航站",
+                                        React.createElement(ExternalLink, { className: "w-3 h-3 opacity-50" })
+                                    ),
+                                    React.createElement("p", { className: "text-sm text-purple-700 dark:text-purple-300 text-center theme-transition" }, "我的个人资源导航页")
+                                ),
+
                                 React.createElement(motion.a, { 
                                     href: "",
                                     target: "_blank",
