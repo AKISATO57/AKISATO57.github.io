@@ -159,7 +159,7 @@
 
         // --- 配置部分 ---
         const CONFIG = {
-            userId: '648470',
+            userId: 'akisato',
             avatar: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8HRpHjs80LFuF_yfs2Avw8wPzD918gACRjcAAtPG8VTjbO0fkjB6CDYE.png',
             bgImage: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8HZpHjs-DKXibaPMoG3c_5dyf0rAIAACSDcAAtPG8VQtPYyl1yUINTYE.png', 
             featured: 'https://img.remit.ee/api/file/BQACAgUAAyEGAASHRsPbAAEJ8HZpHjs-DKXibaPMoG3c_5dyf0rAIAACSDcAAtPG8VQtPYyl1yUINTYE.png',
@@ -435,7 +435,7 @@
             useEffect(() => {
                 setLoading(true);
                 const fetchData = async () => {
-                    const mockTitle = isWatching ? "模拟在看：孤独摇滚" : "模拟看过：CLANNAD";
+                    const mockTitle = isWatching ? "加载失败 请开代理" : "加载失败 请开代理";
                     const mockData = Array.from({ length: limit }).map((_, i) => ({
                         id: i,
                         name: `${mockTitle} ${i+1}`,
@@ -517,7 +517,7 @@
                             )
                         ),
                         React.createElement("a", { 
-                            href: `https://bgm.tv/user/${CONFIG.userId}${isWatching ? '' : 'collections'}`, 
+                            href: `https://bgm.tv/user/${CONFIG.userId}${isWatching ? '' : ''}`, 
                             target: "_blank", 
                             className: "mt-auto w-full py-2 rounded-xl bg-pink-500 text-white text-center text-sm font-medium hover:bg-pink-600 transition-colors" 
                         }, "访问我的BGM主页查看更多")
@@ -1186,7 +1186,7 @@
             },
                 // Cards
                 React.createElement(SocialCard, { className: "w-[calc(50%-12px)] lg:w-[calc(25%-18px)]", icon: Music, title: "Spotify", subtitle: "我的歌单", color: "bg-green-500", href: CONFIG.spotifyProfile }),
-                React.createElement(SocialCard, { className: "w-[calc(50%-12px)] lg:w-[calc(25%-18px)]", icon: BangumiIcon, title: "Bangumi", subtitle: "我的追番记录", color: "bg-rose-500", href: "https://bgm.tv/user/648470" }),
+                React.createElement(SocialCard, { className: "w-[calc(50%-12px)] lg:w-[calc(25%-18px)]", icon: BangumiIcon, title: "Bangumi", subtitle: "我的追番记录", color: "bg-rose-500", href: "https://bgm.tv/user/akisato" }),
                 React.createElement(SocialCard, { className: "w-[calc(50%-12px)] lg:w-[calc(25%-18px)]", icon: Tv, title: "Bilibili", subtitle: "阿姨退钱！", color: "bg-pink-400", href: "https://space.bilibili.com/33013640" }),
                 React.createElement(SocialCard, { className: "w-[calc(50%-12px)] lg:w-[calc(25%-18px)]", icon: SteamIcon, title: "Steam", subtitle: "游戏启动！", color: "bg-indigo-600", href: "https://steamcommunity.com/id/_AKISATO/" }),
                 React.createElement(SocialCard, { className: "w-[calc(50%-12px)] lg:w-[calc(25%-18px)]", icon: Terminal, title: "Linux.do", subtitle: "摸鱼技术社区", color: "bg-violet-600", href: "https://linux.do/u/akisato/summary" }),
